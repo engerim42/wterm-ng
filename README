@@ -1,0 +1,49 @@
+NOTICE: *****This program is WTerm 6.2.9 (with Thai support)*****
+
+------------------------------R*E*A*D*M*E----------------------------
+File:        README
+---------------------------------------------------------------------
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+---------------------------------------------------------------------
+
+This program was optimized for Window Maker 0.50.0+.
+If you have problem using it with another version of
+Window Maker then I suggest you to change to another
+version of this program. wterm 6.1 works fine with
+Window Maker 0.20.3 and can be grabbed on Largo's
+http://wm.current.nu/files.php#wterm
+an anonymous coder
+
+PS: credits to Chiasa Aonuma, Kristy Yang (Yang Kung Ru)
+and friends in #windowmaker for happiness.
+(no,  Chiasa Aonuma, Kristy Yang (Yang Kung Ru) are not coders!
+they are actresses who provided happiness for anonymous coder
+while he coded!)
+
+wterm.tiff was designed by an anonymous artist and nobody
+are allowed to rip it <HEHEHEH>
+---------------------------------------------------------------------
+Tested parameter :)
+./configure --enable-transparency --enable-next-scroll 
+--enable-xpm-background  (all on by default)
+
+The reason for splitting development from rxvt is that someone thrown
+next style menu in it and that use libWMaker and so it is now Window Maker
+specific application. :~)
+---------------------------------------------------------------------
+NOTICE: *****This program is WTerm 6.2.9 (with Thai support)*****
+Thai Edition by ]d

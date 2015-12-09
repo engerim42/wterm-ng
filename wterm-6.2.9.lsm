@@ -1,0 +1,48 @@
+Begin3
+Title:		wterm
+Version:	6.2.9
+Entered-date:	25AUG01
+
+Description:	<http://wm.current.nu/files.php#wterm>
+		Well, Check the site, I am not sure what it really is :)
+
+Keywords:	rxvt colour color kanji xterm X11 vt100 terminal-emulator
+		rclock xbiff xpm menu wterm
+
+Rxvt's Author:	* John Bovey [Univ. Kent at Canterbury] was the creator of
+		  the original xvt.
+
+		* Rob Nation [Lockheed] re-wrote most of xvt to make a
+		  substantiallly enhanced version called rxvt (Rob's xvt)
+		  and also wrote rclock (Rob's clock).
+
+		* Mark Olesen [Queen's Univ. at Kingston] made various
+		  improvements and cleanups. 
+		  Coordinated development, versions 2.11 - 2.21
+
+		* Oezguer Kesim [FU Berlin] 
+		  Coordinated development, versions 2.21a - 2.4.5
+
+		* Geoff Wing rewrote much of the screen refreshing routines
+		  and mouse selection.
+		  Coordinated development, versions 2.4.6 - 
+
+WTerm's Author: * AKK for next scroll bar and fast transparent.
+
+		* zinx made shading idea and made floating scroll bar.
+
+		* an anonymous coder ripped aterm's idea of tinting,
+		  (though, aterm ripped the whole code first and
+		  do little basic change to the way of GC creation :P)
+		  next style menu and fix minor bug.
+
+Maintained-by:	an anonymous coder
+
+Original-site:	ftp.current.nu /pub/WindowMaker
+		2??k	wterm-6.2.9.tar.gz
+
+Platforms:	requires X11 & Window Maker installed
+
+Copying-policy:	GPL
+
+End

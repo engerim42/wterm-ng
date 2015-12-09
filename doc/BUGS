@@ -1,0 +1,20 @@
+                              === Wterm BUGS ===
+
+Please send all bugs you have conceived and they are not listed here to 
+     largo@current.nu
+
+   O v e r v i e w 
+   ---------------
+
+  1) menubars (beta, in progress)
+  2) swap screen selection
+
+
+1) menubars
+
+	Popup Menus should popup on top of EVERYTHING else rather than be
+	obscured by overlapping windows
+
+2) swap screen selection
+
+	Sometimes selection fails after or in swap screen use.

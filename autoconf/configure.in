@@ -1,0 +1,567 @@
+dnl# -*- sh -*-
+dnl#
+dnl# $Id: configure.in,v 1.20 1998/09/24 18:27:31 mason Exp $
+dnl#
+dnl# Process this file with autoconf to produce a configure script.
+dnl#
+AC_INIT(src/feature.h)
+AC_CONFIG_AUX_DIR(autoconf)
+AC_CONFIG_HEADER(config.h:autoconf/config.h.in)
+
+dnl WTERM version
+VERSION=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+DATE=`sed -n -e 's/^.*[ \t]*DATE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+LSMDATE=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+AC_SUBST(VERSION)dnl 
+AC_SUBST(DATE)dnl 
+AC_SUBST(LSMDATE)dnl 
+echo "configuring for wterm $VERSION"
+
+MALLOC_TYPE=S
+
+dnl# --------------------------------------------------------------------------
+dnl# CHECKING COMMAND LINE OPTIONS
+dnl# --------------------------------------------------------------------------
+AC_ARG_ENABLE(utmp,
+  [  --enable-utmp           enable utmp/utmpx support],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(UTMP_SUPPORT) utmp_support=yes
+  fi])
+
+AC_ARG_ENABLE(wtmp,
+  [  --enable-wtmp           enable wtmp support if you have utmp/utmpx support],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(WTMP_SUPPORT) wtmp_support=yes
+  fi])
+
+AC_ARG_ENABLE(xpm-background,
+  [  --enable-xpm-background enable XPM background pixmaps],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(XPM_BACKGROUND) xpm_background=yes
+  fi])
+
+AC_ARG_ENABLE(transparency,
+  [  --enable-transparency   enable transparent background],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(TRANSPARENT) transparent=yes
+  fi])
+
+
+AC_ARG_ENABLE(menubar,
+  [  --enable-menubar        enable Menubar],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(MENUBAR)
+  fi])
+
+AC_ARG_ENABLE(graphics,
+  [  --enable-graphics       enable wterm own graphics mode (see src/graphics)],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(WTERM_GRAPHICS)
+  fi])
+
+AC_ARG_ENABLE(next-scroll,
+  [  --enable-next-scroll    enable NeXT style scrollbar],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(NEXT_SCROLLBAR)
+    SBARFILE=scrollbar2
+  fi])
+
+AC_ARG_ENABLE(xterm-scroll,
+  [  --enable-xterm-scroll   revert to Xterm style scrollbar],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(XTERM_SCROLLBAR)
+  fi])
+
+AC_ARG_ENABLE(half-shadow,
+  [  --enable-half-shadow    use half width/height shadows on non-Xterm scrollbar],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(HALFSHADOW)
+  fi])
+
+AC_ARG_ENABLE(kanji,
+  [  --enable-kanji          enable kanji support],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(KANJI)
+  fi])
+
+AC_ARG_ENABLE(big5,
+  [  --enable-big5           enable big5 support],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(ZH)
+  fi])
+
+AC_ARG_ENABLE(greek,
+  [  --enable-greek          enable greek keyboard support],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(GREEK_SUPPORT)
+  fi])
+
+AC_ARG_ENABLE(ttygid,
+  [  --enable-ttygid         enable tty setting to group \"tty\" - use only if
+                          your system uses this type of security],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(TTY_GID_SUPPORT)
+  fi])
+
+AC_ARG_ENABLE(backspace-key,
+  [  --disable-backspace-key disable handling of the backspace key],
+  [if test x$enableval = xno; then
+    AC_DEFINE(NO_BACKSPACE_KEY)
+  fi])
+
+AC_ARG_ENABLE(delete-key,
+  [  --disable-delete-key    disable handling of the delete key],
+  [if test x$enableval = xno; then
+    AC_DEFINE(NO_DELETE_KEY)
+  fi])
+
+AC_ARG_ENABLE(resources,
+  [  --disable-resources     disable all resource checking],
+  [if test x$enableval = xno; then
+    AC_DEFINE(NO_RESOURCES)
+  fi])
+
+AC_ARG_ENABLE(xgetdefault,
+  [  --enable-xgetdefault    enable resources via X instead of our small version],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(USE_XGETDEFAULT)
+  fi])
+
+AC_ARG_ENABLE(memset,
+  [  --disable-memset        disable memset() function, use your system's instead],
+  [if test x$enableval = xno; then
+    AC_DEFINE(NO_RMEMSET)
+  fi])
+
+AC_ARG_ENABLE(swapscreen,
+  [  --disable-swapscreen    disable swap screen support],
+  [if test x$enableval = xno; then
+    AC_DEFINE(NO_SECONDARY_SCREEN)
+  fi])
+
+AC_ARG_ENABLE(keepscrolling,
+  [  --disable-keepscrolling disable continual scrolling on scrollbar arrow press],
+  [if test x$enableval = xno; then
+    AC_DEFINE(NO_SCROLLBAR_BUTTON_CONTINUAL_SCROLLING)
+  fi])
+
+AC_ARG_ENABLE(mousewheel,
+  [  --disable-mousewheel    disable scrolling via mouse wheel or buttons 4 & 5],
+  [if test x$enableval = xno; then
+    AC_DEFINE(NO_MOUSE_WHEEL)
+  fi])
+
+AC_ARG_ENABLE(old-selection,
+  [  --enable-old-selection  enable v2.20 (and prior) mouse selection
+                          - this implies old word selection],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(OLD_SELECTION)
+  fi])
+
+AC_ARG_ENABLE(old-wordselect,
+  [  --enable-old-wordselect enable v2.20 (and prior) mouse selection of words],
+  [if test x$enableval = xyes; then
+    AC_DEFINE(OLD_WORD_SELECTION)
+  fi])
+
+AC_ARG_ENABLE(dmalloc,
+  [  --enable-dmalloc        enable Gray Watson's malloc - for debugging use],
+  [if test x$enableval = xyes; then
+    MALLOC_TYPE=G
+    DEBUG=-DDEBUG_MALLOC
+    DLIB="-L/usr/local/lib -ldmalloc"
+    DINCLUDE=-I/usr/local/include
+  fi])
+
+AC_ARG_ENABLE(dlmalloc,
+  [  --enable-dlmalloc       enable Doug Lea's malloc - for production use
+                          - enable only one malloc package],
+  [if test x$enableval = xyes; then
+    MALLOC_TYPE=D
+    DEBUG=
+    DLIB="-L/usr/local/lib -ldlmalloc"
+    DINCLUDE=
+  fi])
+
+AC_ARG_WITH(term,
+  [  --with-term=NAME        set the terminal to NAME (default \"xterm\")],
+  [if test x$withval != x; then
+    AC_DEFINE_UNQUOTED(TERMENV,"$withval") term="$withval"
+  fi])
+
+AC_ARG_WITH(terminfo,
+  [  --with-terminfo=PATH    set the path to the terminfo tree to PATH],
+  [if test x$withval != x; then
+    AC_DEFINE_UNQUOTED(WTERM_TERMINFO,"$withval") terminfo="$withval"
+  fi])
+
+dnl# --------------------------------------------------------------------------
+
+AC_DEFINE(PROTOTYPES)
+
+dnl# --------------------------------------------------------------------------
+dnl# Supply default CFLAGS, if not specified by `CFLAGS=flags ./configure'
+dnl#
+if test -z "$CFLAGS"; then
+    if test -z "$CCOPTS"; then
+	CCOPTS='-O'
+dnl>	if test "x$GCC" = xyes; then
+dnl>	    if test x$system = xLinux; then
+dnl>		CCOPTS="$CCOPTS "'-O2 -fno-strength-reduce'
+dnl>	    fi
+dnl>	fi
+    fi
+    CFLAGS="$CCOPTS"
+fi
+
+dnl# Checks for programs.
+dnl AC_MAKE_SET
+
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+
+AC_PATH_PROG(MV, mv, mv)
+AC_PATH_PROG(RM, rm, rm)
+AC_PATH_PROG(CP, cp, cp)
+AC_PATH_PROG(SED, sed, sed)
+
+dnl# system hacks
+AC_AIX
+AC_ISC_POSIX
+
+dnl# need a neat way to detect SVR4 or its features
+dnl# in src/command.c we use these functions:
+dnl# grantpt(), unlockpt(), ptsname(), which are defined in <sys/ptms.h>
+dnl# - but are these also defined for other systems?
+
+dnl# hack to find if this is SVR4 -- who knows?
+dnl## AC_MSG_CHECKING(for SVR4)
+dnl## AC_EGREP_CPP(yes,
+dnl## [#if defined (SVR4) || defined (_SVR4) || defined (__svr4__)
+dnl##   yes;
+dnl## #endif
+dnl## ], [AC_MSG_RESULT(yes); AC_DEFINE(PERHAPS_SVR4)], AC_MSG_RESULT(perhaps not?))
+
+AC_PATH_XTRA		dnl# find the X includes and libraries
+
+dnl# the only reasonable way to find libXpm is do-it-yourself
+dnl# only check if we want xpm-background
+
+if test x$xpm_background = xyes; then
+  VT_FIND_LIBXPM
+fi
+
+if test x$SBARFILE = x; then
+  SBARFILE=scrollbar
+fi
+
+dnl# --------------------------------------------------------------------------
+dnl# CHECKING FOR HEADER FILES
+dnl# --------------------------------------------------------------------------
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS( \
+	assert.h \
+	fcntl.h \
+	grp.h \
+	libc.h \
+	lastlog.h \
+	stdarg.h \
+	stdlib.h \
+	string.h \
+	termios.h \
+	unistd.h \
+	utmpx.h \
+	sys/byteorder.h \
+	sys/ioctl.h \
+	sys/select.h \
+	sys/sockio.h \
+	sys/time.h \
+)
+
+AC_HEADER_TIME
+
+AC_C_CONST
+AC_C_INLINE
+
+dnl> AC_HEADER_STDC	 dnl# skip this test, Sun always fails anyhow.
+
+dnl# --------------------------------------------------------------------------
+dnl# CHECKING FOR MISSING TYPEDEFS
+dnl# --------------------------------------------------------------------------
+dnl# Missing typedefs and replacements
+AC_TYPE_MODE_T
+dnl> AC_CHECK_TYPE(umode_t, int)
+dnl> AC_CHECK_TYPE(off_t, long)
+AC_TYPE_PID_T
+AC_TYPE_UID_T
+
+AC_CHECK_SIZEOF(char, 1)
+AC_CHECK_SIZEOF(short, 2)
+AC_CHECK_SIZEOF(int, 4)
+AC_CHECK_SIZEOF(long, 4)
+AC_CHECK_SIZEOF(int *, 4)
+dnl# ugly
+if test "$cross_compiling" = yes; then
+    echo "configure: warning: Define SIZEOF_* values in config.h manually"
+fi
+dnl# we could probably pull this info from Xmd.h
+dnl# and these tests are ugly: depending on specials
+if test $ac_cv_sizeof_char -ge 2; then
+  RINT16T=char
+  AC_DEFINE(RINT16T,  char)
+  AC_DEFINE(RUINT16T, unsigned char)
+else
+  if test $ac_cv_sizeof_short -ge 2; then
+    RINT16T=short
+    AC_DEFINE(RINT16T,  short)
+    AC_DEFINE(RUINT16T, unsigned short)
+  else
+    if test $ac_cv_sizeof_int -ge 2; then
+      RINT16T=int
+      AC_DEFINE(RINT16T,  int)
+      AC_DEFINE(RUINT16T, unsigned int)
+    else	dnl What a fantastic system ?
+      RINT16T=long
+      AC_DEFINE(RINT16T,  long)
+      AC_DEFINE(RUINT16T, unsigned long)
+    fi
+  fi
+fi
+if test $ac_cv_sizeof_char -ge 4; then
+  RINT32T=char
+  AC_DEFINE(RINT32T,  char)
+  AC_DEFINE(RUINT32T, unsigned char)
+else
+  if test $ac_cv_sizeof_short -ge 4; then
+    RINT32T=short
+    AC_DEFINE(RINT32T,  short)
+    AC_DEFINE(RUINT32T, unsigned short)
+  else
+    if test $ac_cv_sizeof_int -ge 4; then
+      RINT32T=int
+      AC_DEFINE(RINT32T,  int)
+      AC_DEFINE(RUINT32T, unsigned int)
+    else	dnl What a fantastic system ?
+      RINT32T=long
+      AC_DEFINE(RINT32T,  long)
+      AC_DEFINE(RUINT32T, unsigned long)
+    fi
+  fi
+fi
+if test $ac_cv_sizeof_char -eq $ac_cv_sizeof_int_p; then
+  RINTPT=char
+  AC_DEFINE(RINTPT,  char)
+  AC_DEFINE(RUINTPT, unsigned char)
+else
+  if test $ac_cv_sizeof_short -eq $ac_cv_sizeof_int_p; then
+    RINTPT=short
+    AC_DEFINE(RINTPT,  short)
+    AC_DEFINE(RUINTPT, unsigned short)
+  else
+    if test $ac_cv_sizeof_int -eq $ac_cv_sizeof_int_p; then
+      RINTPT=int
+      AC_DEFINE(RINTPT,  int)
+      AC_DEFINE(RUINTPT, unsigned int)
+    else	dnl what next? long long? quad?
+      RINTPT=long
+      AC_DEFINE(RINTPT,  long)
+      AC_DEFINE(RUINTPT, unsigned long)
+    fi
+  fi
+fi
+
+dnl# --------------------------------------------------------------------------
+dnl# CHECKING FOR LIBRARY FUNCTIONS
+dnl# --------------------------------------------------------------------------
+AC_TYPE_SIGNAL
+dnl> AC_FUNC_VPRINTF
+AC_CHECK_FUNCS( \
+	atexit \
+	unsetenv \
+	setutent \
+	seteuid \
+)
+
+dnl# check for host field in utmp structure
+
+AC_CACHE_CHECK(for host in utmp struct, wterm_cv_struct_utmp_host,
+[AC_TRY_COMPILE([#include <sys/types.h>
+#ifdef HAVE_UTMPX_H
+#include <utmpx.h>
+#else
+#include <utmp.h>
+#endif], [
+#ifdef HAVE_UTMPX_H
+struct utmpx ut;
+#else
+struct utmp ut;
+#endif
+ut.ut_host;],
+  wterm_cv_struct_utmp_host=yes, wterm_cv_struct_utmp_host=no)])
+if test "$wterm_cv_struct_utmp_host" = yes; then
+  AC_DEFINE(HAVE_UTMP_HOST)
+fi
+
+dnl# find utmp
+if test "$ac_cv_header_utmpx_h" = yes; then
+  AC_CACHE_CHECK(where utmp is located, wterm_cv_path_utmp,
+  [for utmp_file in   dnl
+    /var/adm/utmpx /etc/utmpx;
+  do
+    if test -f "$utmp_file" ; then 
+      wterm_cv_path_utmp=$utmp_file
+      break
+    fi
+  done
+  ])
+else
+  AC_CACHE_CHECK(where utmp is located, wterm_cv_path_utmp,
+  [for utmp_file in   dnl
+    /var/run/utmp /var/adm/utmp /etc/utmp /usr/etc/utmp /usr/adm/utmp;
+  do
+    if test -f "$utmp_file" ; then 
+      wterm_cv_path_utmp=$utmp_file
+      break
+    fi
+  done
+  ])
+fi
+if test "${wterm_cv_path_utmp+set}" = set; then
+  AC_DEFINE_UNQUOTED(WTERM_UTMP_FILE, "$wterm_cv_path_utmp")
+fi
+
+dnl# find wtmp
+AC_CACHE_CHECK(where wtmp is located, wterm_cv_path_wtmp,
+[for wtmp_file in   dnl
+  /var/log/wtmp /var/adm/wtmp /etc/wtmp /usr/etc/wtmp /usr/adm/wtmp; 
+do
+  if test -f "$wtmp_file" ; then 
+    wterm_cv_path_wtmp=$wtmp_file
+    break
+  fi
+done
+])
+if test "${wterm_cv_path_wtmp+set}" = set; then
+  AC_DEFINE_UNQUOTED(WTERM_WTMP_FILE, "$wterm_cv_path_wtmp")
+fi
+
+dnl# find ttys/ttytab
+AC_CACHE_CHECK(where ttys/ttytab is located, wterm_cv_path_ttytab,
+[for ttys_file in   dnl
+  /etc/ttys /etc/ttytab;
+do
+  if test -f "$ttys_file" ; then 
+    wterm_cv_path_ttytab=$ttys_file
+    break
+  fi
+done
+])
+if test "${wterm_cv_path_ttytab+set}" = set; then
+  AC_DEFINE_UNQUOTED(TTYTAB_FILENAME, "$wterm_cv_path_ttytab")
+fi
+
+dnl# this is a really hack test for some basic Xlocale stuff
+SAVETHELIBS=$LIBS
+LIBS="$LIBS $X_LIBS $X_PRE_LIBS $X_EXTRA_LIBS -lX11"
+AC_CACHE_CHECK(for working Xlocale, wterm_cv_func_xlocale,
+[AC_TRY_RUN([#define X_LOCALE 1
+#include <X11/Xlocale.h>
+#include <X11/Xlib.h>
+main() {
+char *p;
+if ((p = XSetLocaleModifiers("@im=none")) != NULL && *p)
+exit (XSupportsLocale() ? 0 : 1);
+else
+exit (1);}],  dnl
+  wterm_cv_func_xlocale=yes, wterm_cv_func_xlocale=no,  dnl
+  AC_MSG_WARN([Define/Undefine NO_XLOCALE in config.h manually]))])
+if test "${wterm_cv_func_xlocale}" = no; then
+  AC_DEFINE(NO_XLOCALE)
+fi
+LIBS=$SAVETHELIBS
+
+AC_CACHE_CHECK(for working setlocale, wterm_cv_func_xsetlocale,
+[AC_TRY_LINK([#define X_LOCALE 1
+#include <X11/Xlocale.h>],
+  [setlocale(LC_CTYPE, "");],
+  wterm_cv_func_xsetlocale=yes, wterm_cv_func_xsetlocale=no)])
+if test "${wterm_cv_func_xsetlocale}" = no; then
+  AC_DEFINE(NO_SETLOCALE)
+fi
+
+dnl> AC_CHECK_FUNCS(gettimeofday putenv select socket)
+
+CFLAGS=${CFLAGS--O}
+LDFLAGS=${LDFLAGS--O}
+
+CPPFLAGS="$CPPFLAGS"
+AC_SUBST(DEBUG)
+AC_SUBST(DLIB)
+AC_SUBST(DINCLUDE)
+AC_SUBST(CFLAGS)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(LIBS)
+AC_SUBST(SBARFILE)
+
+dnl# common parts of the Makefile
+MCOMMON=./autoconf/Make.common
+AC_SUBST_FILE(MCOMMON)
+
+AC_OUTPUT(autoconf/Make.common \
+Makefile \
+doc/Makefile \
+src/Makefile \
+src/graphics/Makefile \
+)
+
+echo "Configuration:
+
+  Wterm version:              ${VERSION} : ${DATE}
+  Source code location:       ${srcdir}
+  Install path:               ${prefix}/bin
+  Compiler:                   ${CC}
+  Compiler flags:             ${CFLAGS}"
+
+if test "${xpm_background}" = yes; then
+  echo "  Xpm library:                ${XPM_LIBS}
+"
+fi
+
+if test "$MALLOC_TYPE" = S; then
+  echo "  malloc support:             system default"
+fi
+if test "$MALLOC_TYPE" = G; then
+  echo "  malloc support:             Gray Watson's dmalloc"
+fi
+if test "$MALLOC_TYPE" = D; then
+  echo "  malloc support:             Doug Lea's malloc"
+fi
+echo "
+The following are set in config.h
+"
+if test "${utmp_support}" != yes; then
+  echo "  utmp support:               disabled
+"
+else
+  echo "  utmp support:               enabled
+  utmp file:                  ${wterm_cv_path_utmp}
+  wtmp file:                  ${wterm_cv_path_wtmp}
+  ttys/ttytab file:           ${wterm_cv_path_ttytab}
+"
+fi
+if test "x${term}" != x; then
+  echo "  set TERM to:                ${term}
+"
+fi
+if test "x${terminfo}" != x; then
+  echo "  set TERMINFO to:            ${terminfo}
+"
+fi
+echo "  Type of 16bit:               ${RINT16T}
+          32bit:               ${RINT32T}
+          pointer:             (same as) ${RINTPT}
+"
+echo "  *** Please check src/feature.h for further options ***
+"

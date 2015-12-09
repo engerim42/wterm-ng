@@ -1,0 +1,2073 @@
+--- wterm-6.2.9.orig/Makefile.in
++++ wterm-6.2.9/Makefile.in
+@@ -1,9 +1,10 @@
+ # ./Makefile.in			-*- Makefile -*-
+ # $Id: Makefile.in,v 1.3 1998/09/20 08:48:18 mason Exp $
+-@MCOMMON@
++#@MCOMMON@
+ 
+ srcdir = @srcdir@
+ VPATH = @srcdir@
++topbuilddir = $(shell pwd)
+ 
+ first_rule: all
+ dummy:
+@@ -21,16 +22,16 @@
+ #-------------------------------------------------------------------------
+ 
+ all allbin alldoc tags clean:
+-	@for I in ${subdirs}; do (cd $$I; ${MAKE} $@ || exit 1); done
++	set -e; for I in ${subdirs}; do cd $(topbuilddir)/$$I && ${MAKE} $@ ; done
+ 
+ #
+ # entry points for other programs
+ #
+ wterm:
+-	(cd src; ${MAKE})
++	cd src && ${MAKE}
+ 
+ graphics qplot:
+-	(cd src/graphics; ${MAKE} qplot)
++	cd src/graphics && ${MAKE} qplot
+ 
+ #-------------------------------------------------------------------------
+ configure: autoconf/configure.in autoconf/aclocal.m4 autoconf/acconfig.h autoconf/config.h.in
+@@ -54,14 +55,14 @@
+ 	$(MKDIR) $(DESTDIR)$(mandir)
+ 
+ install: installdirs
+-	@for I in $(subdirs); do (cd $$I; $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1); done
++	set -e; for I in $(subdirs); do cd $(topbuilddir)/$$I && $(MAKE) DESTDIR=$(DESTDIR) $@ ; done
+ 
+ Makefiles:
+ 	$(SHELL) config.status
+ 
+ realclean:
+ 	$(RMF) *~ config.cache
+-	@for I in ${subdirs}; do (cd $$I; ${MAKE} $@ || exit 1); done
++	set -e; for I in ${subdirs}; do cd $(topbuilddir)/$$I && ${MAKE} $@ ; done
+ 
+ # distclean goal is for making a clean source tree, but if you have run
+ # configure from a different directory, then doesn't destroy all your
+@@ -70,7 +71,7 @@
+ # and cleaning source links.
+ distclean:
+ 	(cd $(srcdir); $(RMF) *~ config.cache config.h config.log config.status)
+-	@for I in $(subdirs); do (cd $$I; $(MAKE) $@ || exit 1); done
++	for I in $(subdirs); do cd $(topbuilddir)/$$I && $(MAKE) $@ ; done
+ 	(cd $(srcdir); $(RMF) Makefile autoconf/Make.common)
+ 
+ distdirs:
+--- wterm-6.2.9.orig/configure
++++ wterm-6.2.9/configure
+@@ -3596,8 +3596,8 @@
+   cat > conftest.$ac_ext <<EOF
+ #line 3581 "configure"
+ #include "confdefs.h"
+-#define X_LOCALE 1
+-#include <X11/Xlocale.h>
++# #define X_LOCALE 1
++#include <locale.h>
+ #include <X11/Xlib.h>
+ main() {
+ char *p;
+@@ -3623,7 +3623,7 @@
+ echo "$ac_t""$wterm_cv_func_xlocale" 1>&6
+ if test "${wterm_cv_func_xlocale}" = no; then
+   cat >> confdefs.h <<\EOF
+-#define NO_XLOCALE 1
++# #define NO_XLOCALE 1
+ EOF
+ 
+ fi
+@@ -3637,7 +3637,7 @@
+   cat > conftest.$ac_ext <<EOF
+ #line 3622 "configure"
+ #include "confdefs.h"
+-#define X_LOCALE 1
++# #define X_LOCALE 1
+ #include <X11/Xlocale.h>
+ int main() {
+ setlocale(LC_CTYPE, "");
+@@ -3658,7 +3658,7 @@
+ echo "$ac_t""$wterm_cv_func_xsetlocale" 1>&6
+ if test "${wterm_cv_func_xsetlocale}" = no; then
+   cat >> confdefs.h <<\EOF
+-#define NO_SETLOCALE 1
++# #define NO_SETLOCALE 1
+ EOF
+ 
+ fi
+--- wterm-6.2.9.orig/src/graphics/Makefile.in
++++ wterm-6.2.9/src/graphics/Makefile.in
+@@ -1,6 +1,6 @@
+ # test/graphics/Makefile.in	-*- Makefile -*-
+ # $Id: Makefile.in,v 1.2 1998/04/20 07:26:20 mason Exp $
+-@MCOMMON@
++#@MCOMMON@
+ 
+ srcdir = @srcdir@
+ VPATH = @srcdir@
+--- wterm-6.2.9.orig/src/feature.h
++++ wterm-6.2.9/src/feature.h
+@@ -127,7 +127,10 @@
+  * instead of
+  *	Home = "\E[7~", End = "\E[8~"	[default]
+  */
++/*
+ #define LINUX_KEYS
++*/
++
+ 
+ /*
+  * Enable the keysym resource which allows you to define strings associated
+@@ -283,6 +286,10 @@
+  */
+ #define SAVELINES	64
+ 
++/* Debian modification to change the cursor color to the foreground
++   color */
++#define CURSOR_COLOR_IS_RENDITION_COLOR
++
+ /* (Hops) Set to choose a number of lines of context between pages 
+  *      (rather than a proportion (1/5) of savedlines buffer) 
+  *      when paging the savedlines with SHIFT-{Prior,Next} keys.
+--- wterm-6.2.9.orig/src/Makefile.in
++++ wterm-6.2.9/src/Makefile.in
+@@ -1,6 +1,6 @@
+ # src/Makefile.in	-*- Makefile -*-
+ # $Id: Makefile.in,v 1.5 1998/09/22 17:29:40 mason Exp $
+-@MCOMMON@
++#@MCOMMON@
+ 
+ srcdir = @srcdir@
+ VPATH = @srcdir@
+@@ -40,7 +40,7 @@
+ 
+ # inference rules
+ .c.o:
+-	$(CC) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(XINC)  -I. -I$(basedir) -I$(srcdir) $(DINCLUDE) $(CFLAGS) $<
++	$(CC) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(XINC) `get-wings-flags --cflags`  -I. -I$(basedir) -I$(srcdir) $(DINCLUDE) $(CFLAGS) $<
+ #-------------------------------------------------------------------------
+ all: wterm
+ 
+--- wterm-6.2.9.orig/src/xdefaults.c
++++ wterm-6.2.9/src/xdefaults.c
+@@ -795,14 +795,23 @@
+ #  endif
+ 
+     for (entry = 0; entry < optList_size(); entry++) {
+-	char           *p;
++	char           *p, *p0;
+ 	const char     *kw = optList[entry].kw;
+ 
+ 	if (kw == NULL || *(optList[entry].dp) != NULL)
+ 	    continue;		/* previously set */
+-	if ((p = XGetDefault(display, name, kw)) != NULL ||
+-	    (p = XGetDefault(display, APL_SUBCLASS, kw)) != NULL ||
+-	    (p = XGetDefault(display, APL_CLASS, kw)) != NULL) {
++
++#define STRCMP(x, y)		strcmp((const char *)(x), (const char *)(y))
++	p = XGetDefault(display, name, kw);
++	p0 = XGetDefault(display, "!INVALIDPROGRAMMENAMEDONTMATCH!", kw);
++	if (p == NULL || (p0 && STRCMP(p, p0) == 0)) {
++	    p = XGetDefault(display, APL_SUBCLASS, kw);
++	    if (p == NULL || (p0 && STRCMP(p, p0) == 0))
++		p = XGetDefault(display, APL_CLASS, kw);
++	}
++	if (p == NULL && p0)
++	    p = p0;
++	if (p) {
+ 	    *optList[entry].dp = p;
+ 
+ 	    if (optList_isBool(entry)) {
+--- wterm-6.2.9.orig/src/screen.c
++++ wterm-6.2.9/src/screen.c
+@@ -202,10 +202,12 @@
+ /* allocate memory for this screen line and blank it appropriately */
+ /* PROTO */
+ void
+-make_screen_mem(text_t ** tp, rend_t ** rp, int row, rend_t rstyle)
++make_screen_mem(text_t ** tp, rend_t ** rp, int row, rend_t rstyle, char keepr)
+ {
+     tp[row] = MALLOC(sizeof(text_t) * TermWin.ncol);
+     rp[row] = MALLOC(sizeof(rend_t) * TermWin.ncol);
++    if (!keepr)
++      rstyle &= ~(RS_Uline);
+     blank_line(tp[row], rp[row], TermWin.ncol, rstyle);
+ }
+ 
+@@ -265,8 +267,8 @@
+ 
+ 	for (i = 0; i < TermWin.nrow; i++) {
+ 	    j = i + TermWin.saveLines;
+-	    make_screen_mem(screen.text, screen.rend, j, DEFAULT_RSTYLE);
+-	    make_screen_mem(swap.text, swap.rend, i, DEFAULT_RSTYLE);
++	    make_screen_mem(screen.text, screen.rend, j, DEFAULT_RSTYLE, 1);
++	    make_screen_mem(swap.text, swap.rend, i, DEFAULT_RSTYLE, 1);
+ 	    screen.tlen[j] = swap.tlen[i] = 0;
+ 	    drawn_text[i] = MALLOC(TermWin.ncol * sizeof(text_t));
+ 	    drawn_rend[i] = MALLOC(TermWin.ncol * sizeof(rend_t));
+@@ -355,7 +357,7 @@
+ 
+ 	    k = min(TermWin.nscrolled, TermWin.nrow - prev_nrow);
+ 	    for (i = prev_total_rows; i < total_rows - k; i++) {
+-		make_screen_mem(screen.text, screen.rend, i, setrstyle);
++		make_screen_mem(screen.text, screen.rend, i, setrstyle, 1);
+ 		screen.tlen[i] = 0;
+ 	    }
+ 	    for (i = total_rows - k; i < total_rows; i++) {
+@@ -364,7 +366,7 @@
+ 		screen.tlen[i] = 0;
+ 	    }
+ 	    for (i = prev_nrow; i < TermWin.nrow; i++) {
+-		make_screen_mem(swap.text, swap.rend, i, setrstyle);
++		make_screen_mem(swap.text, swap.rend, i, setrstyle, 1);
+ 		swap.tlen[i] = 0;
+ 	    }
+ 	    for (i = prev_nrow; i < TermWin.nrow; i++) {
+@@ -380,7 +382,7 @@
+ 		for (i = TermWin.saveLines - TermWin.nscrolled; k--; i--)
+ 		    if (screen.text[i] == NULL) {
+ 			make_screen_mem(screen.text, screen.rend, i,
+-					setrstyle);
++					setrstyle, 1);
+ 			screen.tlen[i] = 0;
+ 		    }
+ 	    }
+@@ -627,7 +629,7 @@
+ 	    scroll_text(0, (TermWin.nrow - 1), TermWin.nrow, 0);
+ 	for (i = TermWin.saveLines; i < TermWin.nrow + TermWin.saveLines; i++)
+ 	    if (screen.text[i] == NULL) {
+-		make_screen_mem(screen.text, screen.rend, i, DEFAULT_RSTYLE);
++		make_screen_mem(screen.text, screen.rend, i, DEFAULT_RSTYLE, 0);
+ 		screen.tlen[i] = 0;
+ 	    }
+     }
+@@ -872,7 +874,7 @@
+ 	    scroll_text(screen.tscroll, screen.bscroll, nlines, 0);
+ 	    for (i = nlines, j = screen.bscroll + TermWin.saveLines; i--; j--) {
+ 		if (screen.text[j] == NULL)
+-		    make_screen_mem(screen.text, screen.rend, j, rstyle);
++		    make_screen_mem(screen.text, screen.rend, j, rstyle, 0);
+ 		else
+ 		    blank_line(screen.text[j], screen.rend[j], TermWin.ncol,
+ 			       rstyle);
+@@ -946,7 +948,7 @@
+ 			j = screen.bscroll + TermWin.saveLines;
+ 			if (screen.text[j] == NULL)
+ 			    make_screen_mem(screen.text, screen.rend, j,
+-					    rstyle);
++					    rstyle, 0);
+ 			else
+ 			    blank_line(screen.text[j], screen.rend[j],
+ 				       TermWin.ncol, rstyle);
+@@ -975,7 +977,7 @@
+ 		scroll_text(screen.tscroll, screen.bscroll, 1, 0);
+ 		j = screen.bscroll + TermWin.saveLines;
+ 		if (screen.text[j] == NULL)
+-		    make_screen_mem(screen.text, screen.rend, j, rstyle);
++		    make_screen_mem(screen.text, screen.rend, j, rstyle, 0);
+ 		else
+ 		    blank_line(screen.text[j], screen.rend[j], TermWin.ncol,
+ 			       rstyle);
+@@ -1160,7 +1162,7 @@
+ 	else
+ 	    dirn = screen.tscroll + TermWin.saveLines;
+ 	if (screen.text[dirn] == NULL)	/* then so is screen.rend[dirn] */
+-	    make_screen_mem(screen.text, screen.rend, dirn, rstyle);
++	    make_screen_mem(screen.text, screen.rend, dirn, rstyle, 0);
+ 	else
+ 	    blank_line(screen.text[dirn], screen.rend[dirn], TermWin.ncol,
+ 		       rstyle);
+@@ -1370,7 +1372,7 @@
+     }
+     for (; count--; end--) {
+ 	if (screen.text[end] == NULL)	/* then so is screen.rend[end] */
+-	    make_screen_mem(screen.text, screen.rend, end, rstyle);
++	    make_screen_mem(screen.text, screen.rend, end, rstyle, 0);
+ 	else
+ 	    blank_line(screen.text[end], screen.rend[end], TermWin.ncol,
+ 		       rstyle);
+@@ -2151,11 +2153,19 @@
+ #ifndef NO_CURSORCOLOR
+ 	cc1 = *srp & (RS_fgMask | RS_bgMask);
+ 	if (Xdepth <= 2 || !rs_color[Color_cursor])
++#ifdef CURSOR_COLOR_IS_RENDITION_COLOR
++	    ccol1 = GET_FGCOLOR(rstyle);
++#else
+ 	    ccol1 = Color_fg;
++#endif
+ 	else
+ 	    ccol1 = Color_cursor;
+ 	if (Xdepth <= 2 || !rs_color[Color_cursor2])
++#ifdef CURSOR_COLOR_IS_RENDITION_COLOR
++	    ccol2 = GET_BGCOLOR(rstyle);
++#else
+ 	    ccol2 = Color_bg;
++#endif
+ 	else
+ 	    ccol2 = Color_cursor2;
+ 	/* The cursor colours *must* be set separately - using an OR to  */
+--- wterm-6.2.9.orig/src/main.c
++++ wterm-6.2.9/src/main.c
+@@ -1660,6 +1660,14 @@
+ 	sprintf(term_string, "TERM=%s", rs_term_name);
+ 	putenv(term_string);
+     } else {
++        /* Debian hack: We at Debian use TERM=rxvt on color displays and
++           TERM=rxvt-m (the -m stands for monochrome, see terminfo(5)) on
++           monochrome displays. */
++#ifndef KANJI
++	if (Xdepth <= 2)
++	    putenv("TERM=" TERMENV "-m");
++	else
++#endif
+ 	putenv("TERM=" TERMENV);
+     }
+ 
+--- wterm-6.2.9.orig/src/command.c
++++ wterm-6.2.9/src/command.c
+@@ -61,7 +61,7 @@
+ #  define NO_XLOCALE
+ # else
+ #  define X_LOCALE
+-#  include <X11/Xlocale.h>
++#  include <locale.h>
+ # endif
+ #endif				/* NO_XLOCALE */
+ 
+@@ -242,6 +242,7 @@
+ static unsigned char meta_char = 033;	/* Alt-key prefix */
+ #endif
+ static unsigned int ModXMask = Mod1Mask;
++static unsigned int ModNumLockMask;
+ 
+ /* DEC private modes */
+ #define PrivMode_132		(1LU<<0)
+@@ -485,6 +486,18 @@
+     char           *c1, *c2;
+     int             idx;
+ 
++#if ((__GLIBC__ > 2) || (__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 1))
++    /* GNU libc 2 allows us to abstract away from having to know the
++       master pty device name. */
++    if ((fd = getpt()) >= 0) {
++	grantpt(fd);
++	unlockpt(fd);
++	ttydev = strdup(ptsname(fd));
++	goto Found;
++    }
++    close(fd);
++#endif
++
+     ptydev = pty_name;
+     ttydev = tty_name;
+ 
+@@ -1075,6 +1088,11 @@
+  * Initialize the command connection.
+  * This should be called after the X server connection is established.
+  */
++    int             i, j, k;
++    XModifierKeymap *map;
++    KeyCode        *kc;
++    unsigned int    modmasks[] =
++	{ Mod1Mask, Mod2Mask, Mod3Mask, Mod4Mask, Mod5Mask };
+ 
+ /* Enable delete window protocol */
+     wmDeleteWindow = XInternAtom(Xdisplay, "WM_DELETE_WINDOW", False);
+@@ -1118,6 +1136,21 @@
+ 	default:
+ 	    ModXMask = Mod1Mask;
+ 	}
++    map = XGetModifierMapping(Xdisplay);
++    kc = map->modifiermap;
++    for (i = 3; i < 8; i++) {
++	k = i * map->max_keypermod;
++	for (j = 0; j < map->max_keypermod; j++, k++) {
++	    if (kc[k] == 0)
++		break;
++	    switch (XKeycodeToKeysym(Xdisplay, kc[k], 0)) {
++	    case XK_Num_Lock:
++		ModNumLockMask = modmasks[i - 3];
++		break;
++	    }
++	}
++    }
++    XFreeModifiermap(map);
+ #endif
+     if (Options & Opt_scrollTtyOutputInh)
+ 	PrivateModes |= PrivMode_TtyOutputInh;
+@@ -1322,8 +1355,8 @@
+     shft = (ev->xkey.state & ShiftMask);
+     ctrl = (ev->xkey.state & ControlMask);
+     meta = (ev->xkey.state & ModXMask);
+-    if (numlock_state || (ev->xkey.state & Mod5Mask)) {
+-	numlock_state = (ev->xkey.state & Mod5Mask);	/* numlock toggle */
++    if (numlock_state || (ev->xkey.state & ModNumLockMask)) {
++	numlock_state = (ev->xkey.state & ModNumLockMask);
+ 	PrivMode((!numlock_state), PrivMode_aplKP);
+     }
+ #ifndef NO_XLOCALE
+--- wterm-6.2.9.orig/doc/Makefile.in
++++ wterm-6.2.9/doc/Makefile.in
+@@ -1,6 +1,6 @@
+ # doc/Makefile.in	-*- Makefile -*-
+ # $Id: Makefile.in,v 1.5 1998/09/20 23:49:22 mason Exp $
+-@MCOMMON@
++#@MCOMMON@
+ 
+ srcdir = @srcdir@
+ VPATH = @srcdir@
+@@ -54,7 +54,8 @@
+ realclean: clean
+ 	$(RMF) tags wterm.1 wterm.html wtermRef.html wtermRef.txt
+ 
+-distclean:
++distclean: clean
++	$(RMF) tags
+ 
+ install: wterm.1
+ 	$(INSTALL_DATA) wterm.1 $(DESTDIR)$(mandir)/$(manprefix)wterm.$(manext)
+--- wterm-6.2.9.orig/doc/Makefile
++++ wterm-6.2.9/doc/Makefile
+@@ -1,7 +1,7 @@
+ # Generated automatically from Makefile.in by configure.
+ # doc/Makefile.in	-*- Makefile -*-
+ # $Id: Makefile.in,v 1.5 1998/09/20 23:49:22 mason Exp $
+-
++#
+ # autoconf/Make.common.in	 -*- Makefile -*-
+ # release date (man), LSM date, version number/name, current maintainer
+ # $Id: Make.common.in,v 1.2 1998/04/20 07:24:15 mason Exp $
+@@ -43,10 +43,10 @@
+ RM = /bin/rm
+ RMF = /bin/rm -f
+ CP = /bin/cp
+-SED = /usr/bin/sed
+-INSTALL = /usr/bin/ginstall -c
+-INSTALL_PROGRAM = /usr/bin/ginstall -c -s -m 755
+-INSTALL_DATA = /usr/bin/ginstall -c -m 644
++SED = /bin/sed
++INSTALL = /usr/bin/install -c
++INSTALL_PROGRAM = /usr/bin/install -c -s -m 755
++INSTALL_DATA = /usr/bin/install -c -m 644
+ 
+ # Flags & libs
+ # add -DBINDIR=\""$(bindir)/"\" to CPPFLAGS, if we need to spawn a program
+@@ -63,7 +63,7 @@
+ XINC =  -I/usr/X11R6/include 
+ 
+ # extra libraries needed by X on some systems, X library location
+-XLIB =  -L/usr/X11R6/lib  -lSM -lICE  -L/usr/X11/lib -lXpm -lX11 -lWMaker
++XLIB =  -L/usr/X11R6/lib  -lSM -lICE  -L/usr/X11R6/lib -lXpm -lX11 -lWMaker
+ 
+ # End of common section of the Makefile
+ #-------------------------------------------------------------------------
+@@ -119,7 +119,8 @@
+ realclean: clean
+ 	$(RMF) tags wterm.1 wterm.html wtermRef.html wtermRef.txt
+ 
+-distclean:
++distclean: clean
++	$(RMF) tags
+ 
+ install: wterm.1
+ 	$(INSTALL_DATA) wterm.1 $(DESTDIR)$(mandir)/$(manprefix)wterm.$(manext)
+--- wterm-6.2.9.orig/debian/patches/00list
++++ wterm-6.2.9/debian/patches/00list
+@@ -0,0 +1,3 @@
++01-uninitialized-keysym
++02-keypad-keycode
++03-kstate-func-defs
+--- wterm-6.2.9.orig/debian/patches/01-uninitialized-keysym.dpatch
++++ wterm-6.2.9/debian/patches/01-uninitialized-keysym.dpatch
+@@ -0,0 +1,20 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run 
++## 01_uninitialized_keysym.dpatch by Jeff Stevens <jeff@mossycup.com> 
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: An uninitialized variable was occasionally causing the incorrect
++## DP: key value to be output.  This resolves #284820.  Thank you Goran
++## DP: Weinholt <weinholt@debian.org> for submitting this patch. 
++
++@DPATCH@
++--- wterm-6.2.9.orig/src/command.c	2005-08-06 02:35:37.000000000 +0200
+++++ wterm-6.2.9/src/command.c	2005-08-06 02:35:44.000000000 +0200
++@@ -1311,7 +1344,7 @@
++     {NULL, 0};
++     static unsigned char kbuf[KBUFSZ];
++     int             ctrl, meta, shft, len;
++-    KeySym          keysym;
+++    KeySym          keysym = 0;
++ 
++ /*
++  * use Num_Lock to toggle Keypad on/off.  If Num_Lock is off, allow an
+--- wterm-6.2.9.orig/debian/patches/02-keypad-keycode.dpatch
++++ wterm-6.2.9/debian/patches/02-keypad-keycode.dpatch
+@@ -0,0 +1,25 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run 
++## 02_keypad_keycode.dpatch by Jeff Stevens <jeff@mossycup.com> 
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: In Application Mode, the KP2 button emits the incorrect keycode.
++## DP: This patch corrects this bug and resolves #213209. Thanks to
++## DP: Adam Borowski <kilobyte@mimuw.edu.pl> for submitting this patch. 
++
++@DPATCH@
++--- wterm-6.2.9.orig/src/command.c	2005-08-21 12:11:59.739793621 -0700
+++++ wterm-6.2.9/src/command.c	2005-08-21 12:50:49.797790549 -0700
++@@ -1529,11 +1562,11 @@
++ 	    case XK_KP_Left:	/* \033Ot or standard */
++ 	    case XK_KP_Up:	/* \033Ox or standard */
++ 	    case XK_KP_Right:	/* \033Ov or standard */
++-	    case XK_KP_Down:	/* \033Ow or standard */
+++	    case XK_KP_Down:	/* \033Or or standard */
++ 		if ((PrivateModes && PrivMode_aplKP) ? !shft : shft) {
++ 		    len = 3;
++ 		    STRCPY(kbuf, "\033OZ");
++-		    kbuf[2] = ("txvw"[keysym - XK_KP_Left]);
+++		    kbuf[2] = ("txvr"[keysym - XK_KP_Left]);
++ 		    break;
++ 		} else {
++ 		/* translate to std. cursor key */
+--- wterm-6.2.9.orig/debian/patches/03-kstate-func-defs.dpatch
++++ wterm-6.2.9/debian/patches/03-kstate-func-defs.dpatch
+@@ -0,0 +1,25 @@
++#! /bin/sh /usr/share/dpatch/dpatch-run
++## 03-kstate-func-defs.dpatch by Jeff Stevens <jeff@mossycup.com>
++##
++## All lines beginning with `## DP:' are a description of the patch.
++## DP: A set of functions defined as static conflicted with their
++## DP: prototypes.  When compiled with GCC 3.x, this generated a warning.
++## DP: GCC 4.x generates an error in this case, resulting in a FTBFS.  Thanks
++## DP: to Andreas Jochens <aj@andaco.de> for providing this patch.
++
++@DPATCH@
++--- wterm-6.2.9.orig/src/grkelot.c	1999-02-02 03:07:54.000000000 -0800
+++++ wterm-6.2.9/src/grkelot.c	2005-08-21 16:32:36.092302112 -0700
++@@ -157,9 +157,9 @@
++ 
++ #define NUM_XLAT_TYPES	(sizeof(xlat_type) / sizeof(xlat_type[0]))
++ 
++-static void     kstate_add_xlat(char *str);
++-static void     kstate_add_switcher(char *str);
++-static void     kstate_set_life(char *str);
+++void     kstate_add_xlat(char *str);
+++void     kstate_add_switcher(char *str);
+++void     kstate_set_life(char *str);
++ 
++ /* --- Functions ------------- */
++ /* PROTO */
+--- wterm-6.2.9.orig/debian/wterm-ml.linda/wterm-ml
++++ wterm-6.2.9/debian/wterm-ml.linda/wterm-ml
+@@ -0,0 +1,2 @@
++Tag: incorrect-file-perms
++Data: /usr/bin/(cwterm|gwterm|kwterm)
+--- wterm-6.2.9.orig/debian/wterm-ml.lintian/wterm-ml
++++ wterm-6.2.9/debian/wterm-ml.lintian/wterm-ml
+@@ -0,0 +1,4 @@
++# Terminal binaries need setgid for utmp support
++wterm-ml: setgid-binary usr/bin/kwterm 2755 root/utmp
++wterm-ml: setgid-binary usr/bin/cwterm 2755 root/utmp
++wterm-ml: setgid-binary usr/bin/gwterm 2755 root/utmp
+--- wterm-6.2.9.orig/debian/wterm.linda/wterm
++++ wterm-6.2.9/debian/wterm.linda/wterm
+@@ -0,0 +1,2 @@
++Tag: incorrect-file-perms
++Data: /usr/bin/wterm
+--- wterm-6.2.9.orig/debian/wterm.lintian/wterm
++++ wterm-6.2.9/debian/wterm.lintian/wterm
+@@ -0,0 +1,2 @@
++# Terminal binary requires setgid to work with utmp
++wterm: setgid-binary usr/bin/wterm 2755 root/utmp
+--- wterm-6.2.9.orig/debian/wterm-ml.examples
++++ wterm-6.2.9/debian/wterm-ml.examples
+@@ -0,0 +1 @@
++examples/menu
+--- wterm-6.2.9.orig/debian/README.Debian
++++ wterm-6.2.9/debian/README.Debian
+@@ -0,0 +1,37 @@
++wterm for Debian
++----------------
++
++Wterm started as a beta test of some additions Alfredo hoped to get
++contributed to the official RXVT source tree. These included VERY fast
++transparency without requiring any special application to set the root
++image, a fantastic looking NeXT scrollbar option, and also from zinx
++(#windowmaker on efnet) we had a transparent scrollbar trough and
++preliminary transparency tint hack.
++
++An Anonymous Coder has put together wterm-6.1 and wterm-6.2.6 for us,
++which include transparency, reverse transparency, wmaker app menu
++support with PropList configuration, cloning of current wterm and more!.
++This also fixes some bugs... work in progress!
++
++To install wterm from source code, some header files are required. These
++files are all included in the Window Maker source tree (available from
++ftp.windowmaker.org) but can also be obtained by installing the
++following debian packages (deb's)
++
++	*	libwraster2-dev
++	*	libwmaker0-dev
++	*	libwings-dev
++
++Also, xpm4g-dev must also be installed.
++
++Wterm integrates well with  Window Maker, but works under other window
++managers, provided the above libraries are installed. Wterm has been
++tested on icewm (version 0.9.39) and fvwm (version 2.2.2). If you
++have successfully run Wterm on any other window manager platforms,
++please let me know so I can add it to this list.
++
++Please send any questions/comments regarding this package to:
++Jeff Stevens <jeff@mossycup.com>
++Tony Mancill <tmancill@debian.org> (sponsor)
++
++ -- Jeff Stevens <jeff@mossycup.com>, Sun,  6 Nov 2005 14:46:27 -0800
+--- wterm-6.2.9.orig/debian/TODO.Debian
++++ wterm-6.2.9/debian/TODO.Debian
+@@ -0,0 +1,6 @@
++An incomplete list of needed patches and improvements:
++
++ - Add wterm icons to binary packages.
++ - Improve documentation.
++ - Investigate other packages (fonts) that may be useful with wterm-ml and
++   include them in the 'Suggests' field in the control file.
+--- wterm-6.2.9.orig/debian/changelog
++++ wterm-6.2.9/debian/changelog
+@@ -0,0 +1,256 @@
++wterm (6.2.9-8) unstable; urgency=low
++
++  * Change xlibs-dev Build-Depends in control to libx11-dev, libxpm-dev,
++    libxt-dev and x-dev (Closes: #346785).
++
++ -- Jeff Stevens <jeff@mossycup.com>  Mon,  9 Jan 2006 16:42:08 -0800
++
++wterm (6.2.9-7) unstable; urgency=low
++
++  * New maintainer (Closes: #321342). 
++  * Acknowlege NMU 2.6.9-6.1 (Closes: #282286).
++  * Acknowlege NMU 2.6.9-6.2 (Closes: #286323).
++  * Acknowlege NMU 2.6.9.6.3 (Closes: #288648, #229517).
++  * Acknowlege NMU 2.6.9.6.4 (Closes: #329286).
++  * Add patch from Goran Weinholt to resolve improper key press output due
++    to uninitialized variable (Closes: #284820).
++  * Add patch from Adam Borowski to correct KP2 keycode in Application
++    Mode (Closes: #213209).
++  * Move GCC 4.0 FTBFS patch from src/grkelot.c to rules/patches for dpatch. 
++  * Update Policy-Version to 3.6.2 (no changes).
++  * Removed extranious blank lines from wterm manpage (Closes: #327142).
++  * Set priority to 20 for x-terminal-emulator binaries.  Previous priority
++    of 10 was incorrect.
++  * Fix linitian warnings and errors (v1.23.12):
++    - Quote all unquoted strings in menu files.
++    - Add lintian overrides for setgid binaries as required for utmp support.
++    - Menu files install into /usr/share/menu.
++    - Eliminate Bashisms in maintainer scripts.
++  * Fix linda warnings and errors (v0.3.16):
++    - Add linda overrides for setgid binaries as required for utmp support.
++  * Overhaul package building process:
++    - Rewrite rules resulting in simplification and debhelper support.
++    - Reorganize files in debian/ to work elegantly with debhelper.
++    - Implement dpatch.
++  
++ -- Jeff Stevens <jeff@mossycup.com>  Sun,  6 Nov 2005 20:04:37 -0800 
++
++wterm (6.2.9-6.4) unstable; urgency=low
++
++  * Non-maintainer upload
++  
++  * debian/rules: set optimisation level from O3 to policy-recommended O2
++    to prevent ICE on m86k (Closes: #329286)
++
++ -- René van Bevern <rvb@pro-linux.de>  Wed, 21 Sep 2005 11:09:48 +0200
++
++wterm (6.2.9-6.3) unstable; urgency=low
++
++  * Non-maintainer upload
++
++  * debian/menu-ml: add menu entries for the different wterm-ml flavours
++    "cwterm", "gwterm" and "kwterm", because the executable "wterm-ml" is
++    non-existant. (Closes: #229517)
++
++  * Apply patch from Andreas Jochens to fix FTBFS with GCC 4.0 (Closes: #288648)
++    + src/grkelot.c: remove "static" keyword from prototypes of functions
++      that are later defined non-static
++
++ -- René van Bevern <rvb@pro-linux.de>  Tue,  6 Sep 2005 13:33:49 +0200
++
++wterm (6.2.9-6.2) unstable; urgency=low
++
++  * Non-Maintainer Upload
++  * Drop build-dependency on libwraster3-dev it isn't used (Closes: #286323)
++
++ -- Jeroen van Wolffelaar <jeroen@wolffelaar.nl>  Sun,  2 Jan 2005 21:54:28 +0100
++
++wterm (6.2.9-6.1) unstable; urgency=low
++
++  * NMU to DELAYED/3.
++  * Update Build-Depends to libwraster3-dev (Closes: #282286).
++
++ -- Christoph Berg <cb@df7cb.de>  Sun, 28 Nov 2004 15:12:13 +0100
++
++wterm (6.2.9-6) unstable; urgency=high
++
++  * Updated names of build dependencies.
++  * Rebuilt to accompany new library packages due to EXTREME SLOPPINESS
++    on the part of the maintainer of wmaker-related packages.
++    (Closes: Bug#177579)
++  * Removed full stop at the end of short description.
++  * Removed links from /usr/doc to /usr/share/doc.
++
++ -- Brian Mays <brian@debian.org>  Mon, 28 Jul 2003 14:49:58 -0400
++
++wterm (6.2.9-5) unstable; urgency=medium
++
++  * Fixed x-terminal-emulator.1.gz alternative.  (Closes: Bug#146155)
++
++ -- Brian Mays <brian@debian.org>  Tue, 14 May 2002 14:56:33 -0400
++
++wterm (6.2.9-4) unstable; urgency=medium
++
++  * Modified postinst to ignore an existing /usr/doc/$package directory.
++
++ -- Brian Mays <brian@debian.org>  Wed, 20 Mar 2002 11:24:52 -0500
++
++wterm (6.2.9-3) unstable; urgency=low
++
++  * Replaced the "wterm" man page (actually rxvt's) added by the
++    upstream developers.  (Closes: Bug#136085)
++
++ -- Brian Mays <brian@debian.org>  Wed, 27 Feb 2002 18:38:44 -0500
++
++wterm (6.2.9-2) unstable; urgency=low
++
++  * Fixed symlink /usr/doc -> ../share/doc.
++  * Fixed reference to GPL.
++  * Improved stripping of binaries.
++  * Split multilingual support into separate wterm binaries.  (Closes:
++    Bug#81228)
++  * Fixed bug causing wterm to ignore the numlock.  (Closes: Bug#103665)
++  * Added patch from Geoff Wing <gcw@rxvt.org> to bind specific X
++    resources before global resources.
++  * Added hack to change the cursor color whenever foreground color
++    is changed.
++
++ -- Brian Mays <brian@debian.org>  Mon,  4 Feb 2002 07:27:23 -0500
++
++wterm (6.2.9-1) unstable; urgency=low
++
++  * New upstream version.  (Closes: Bug#121603)
++  * Added a wterm-ml man page.  (Closes: Bug#113575)
++  * Fixed symlink /usr/doc -> ../share/doc.
++
++ -- Brian Mays <brian@debian.org>  Sun, 27 Jan 2002 12:54:11 -0500
++
++wterm (6.2.6-17) unstable; urgency=low
++
++  * Moved stuff out of /usr/X11R6 to satisfy section 12.8.7 of the
++    policy manual.
++
++ -- Brian Mays <brian@debian.org>  Mon, 19 Nov 2001 18:44:48 -0500
++
++wterm (6.2.6-16) unstable; urgency=low
++
++  * Modified the Build-Depends to use the new X package names.
++    (Closes: Bug#90740)
++
++ -- Brian Mays <brian@debian.org>  Sun, 25 Mar 2001 09:39:38 -0500
++
++wterm (6.2.6-15) unstable; urgency=low
++
++  * Fixed error in the call to get-wings-flags.  (Closes: Bug#86671)
++
++ -- Brian Mays <brian@debian.org>  Tue, 27 Feb 2001 11:17:31 -0500
++
++wterm (6.2.6-14) unstable; urgency=low
++
++  * Added the use of "get-wings-flags" for building the executables.
++
++ -- Brian Mays <brian@debian.org>  Mon, 12 Feb 2001 09:58:47 -0500
++
++wterm (6.2.6-13) unstable; urgency=low
++
++  * Fixed cursor color bug.
++
++ -- Brian Mays <brian@debian.org>  Fri,  2 Feb 2001 15:48:02 -0500
++
++wterm (6.2.6-12) unstable; urgency=low
++
++  * Removed suidmanager support (I always hated that stupid program).
++
++ -- Brian Mays <brian@debian.org>  Wed, 24 Jan 2001 13:13:01 -0500
++
++wterm (6.2.6-11) unstable; urgency=low
++
++  * New upstream maintainer.
++  * Fixed a bug with underlining.  (Closes: Bug#67405)
++  * Changed TERM to "rxvt".  (Closes: Bug#68212, Bug#73049, Bug#67058)
++  * Cleaned up copyright.
++  * Fixed man page.
++
++ -- Brian Mays <brian@debian.org>  Mon,  8 Jan 2001 20:27:02 -0500
++
++wterm (6.2.6-10) unstable; urgency=low
++
++  * Patched source to include Unix98 pty support (closes: #61479) 
++  * Split the package in two (wterm and wterm-ml packages). (closes: #47012)
++  * UTMP support.
++  * Updated the manpage.
++
++ -- Mark Triggs <mrbump@debian.org>  Sun,  9 Apr 2000 10:20:30 +1000
++
++wterm (6.2.6-9) unstable; urgency=low
++
++  * Fixes problem with Russian characters (closes: #54825)
++  * Configured with --enable-xgetdefault (closes: #55874) 
++  * debian/rules file mentions libproplist-dev (closes: #55006)
++
++ -- Mark Triggs <mrbump@debian.org>  Sat,  4 Mar 2000 11:11:32 +0000
++
++wterm (6.2.6-8) unstable; urgency=low
++
++  * Added "Provides: x-terminal-emulator" (closes: #47159)
++
++ -- Mark Triggs <mrbump@debian.org>  Mon, 27 Dec 1999 14:35:27 +0000
++
++wterm (6.2.6-7) unstable; urgency=low
++
++  * Problem has been fixed regarding removal of non-existant config.cache file
++    (closes: #45498)  
++  * (closes: #45759)
++  * Terminal mode RXVT modified to allow home/end keys AND fonts. (closes: #42373)
++  * Applied patches ever so kindly supplied by Josip Rodin (closes: #45532)
++
++ -- Mark Triggs <mrbump@debian.org>  Sun, 26 Sep 1999 13:58:23 +1000
++
++wterm (6.2.6-6) unstable; urgency=low
++
++  * Fixed small problem regarding the removal of config.cache during clean.
++    (closes: #45218)
++
++ -- Mark Triggs <mrbump@debian.org>  Fri, 17 Sep 1999 17:36:24 +1000
++
++wterm (6.2.6-5) unstable; urgency=low
++
++  * Changed installation of wterm binary from /usr/bin to /usr/X11R6/bin
++  * Rebuilt package to contain .orig.tar.gz. (closes: #44293)
++
++ -- Mark Triggs <mrbump@debian.org>  Sun,  5 Sep 1999 15:14:31 +1000
++
++wterm (6.2.6-4) unstable; urgency=low
++
++  * Included information in manpage, and README.debian file, for users who 
++    may be having trouble with HOME and END keys not working properly.
++    (closes: #40390)
++  * Added menu files and postinst/postrm scripts.
++  * 
++
++ -- Mark Triggs <mrbump@debian.org>  Sun,  5 Sep 1999 15:14:21 +1000
++
++wterm (6.2.6-3) unstable; urgency=low
++
++  * Modified manpage to explain the -gc option more clearly (closes #40045) 
++  * Re-arranged manpage to display all parameters alphabetically. Much easier to read.
++
++ -- Mark Triggs <mrbump@debian.org>  Tue, 29 Jun 1999 18:12:38 +1000
++
++wterm (6.2.6-2) unstable; urgency=low
++
++  * Tweaked Makefile.in slightly so any missing header files causes the
++    compile to instantly terminate, rather than continuing. (closes: #39869)
++  * Cleaned up source package.
++  * Added dependency recommendations in debian/rules (for source users).
++  * Removed rxvt.1 manpage from source + binary (closes: #39886)
++  * Updated README.debian file.
++
++ -- Mark Triggs <mrbump@debian.org>  Wed, 16 Jun 1999 20:28:13 +1000
++
++wterm (6.2.6-1) unstable; urgency=low
++
++  * Initial Release.
++  * Wrote a manpage for wterm.. most of the features are described.
++
++ -- Mark Triggs <mrbump@debian.org>  Sun, 25 Apr 1999 19:45:33 +1000
+--- wterm-6.2.9.orig/debian/compat
++++ wterm-6.2.9/debian/compat
+@@ -0,0 +1 @@
++4
+--- wterm-6.2.9.orig/debian/control
++++ wterm-6.2.9/debian/control
+@@ -0,0 +1,49 @@
++Source: wterm
++Section: x11
++Priority: optional
++Maintainer: Jeff Stevens <jeff@mossycup.com> 
++Build-Depends: dpatch, debhelper (>= 4), libx11-dev, libxpm-dev, libxt-dev, x-dev, libwmaker0-dev, libwings-dev
++Standards-Version: 3.6.2
++
++Package: wterm
++Architecture: any
++Depends: ${shlibs:Depends}, base-passwd (>= 2.0.3.4)
++Conflicts: suidmanager (<< 0.50)
++Provides: x-terminal-emulator
++Description: lightweight terminal emulator for X 
++ wterm is a color VT102 terminal emulator for the X Window System.  While
++ lightweight, it provides an elegant interface including NeXTSTEP style scroll
++ bars and an application menu that integrates well with the Window Maker 
++ window manager and GNUstep based applications.  wterm works well with any
++ window manager or desktop environment.
++ .
++ Features of wterm include background images, transparency, and reverse
++ transparency.  An extensive set or runtime options are available resulting in
++ a very customizable terminal emulator.
++ .
++ This package contains support for the Latin character set only.  If you are
++ interested in support for Chinese characters (BIG5), Kanji characters (EUC-JP
++ or SJIS), or Greek keyboard support, please see the wterm-ml package.
++
++Package: wterm-ml
++Architecture: any
++Depends: ${shlibs:Depends}, base-passwd (>= 2.0.3.4)
++Suggests: xfonts-cjk, xfonts-intl-european, xfonts-intl-chinese (>= 1.1-4) | xfonts-cmex-big5p, xcin (>= 2.5.0-0.2)
++Conflicts: suidmanager (<< 0.50)
++Provides: x-terminal-emulator
++Description: lightweight multilingual terminal emulator for X
++ wterm is a color VT102 terminal emulator for the X Window System.  While
++ lightweight, it provides an elegant interface including NeXTSTEP style scroll
++ bars and an application menu that integrates well with the Window Maker
++ window manager and GNUstep based applications.  wterm works well with any
++ window manager or desktop environment.
++ .
++ Features of wterm include background images, transparency, and reverse 
++ transparency.  An extensive set or runtime options are available resulting in
++ a very customizable terminal emulator.
++ .
++ This package contains three variants of wterm.  cwterm provides support for
++ Chinese characters (BIG5).  kwterm provides support for Kanji characters 
++ (EUC-JP or SJIS).  gwterm provides Greek keyboard support.  If you are
++ interested in Latin character set support only, please see the wterm
++ package.
+--- wterm-6.2.9.orig/debian/copyright
++++ wterm-6.2.9/debian/copyright
+@@ -0,0 +1,40 @@
++This is the Debian GNU/Linux prepackaged version of wterm.
++
++This package was originally put together by Mark Triggs
++<mrbump@debian.org>.  This version was assembled by Brian Mays
++<brian@debian.org> using sources obtained from:
++ http://largo.windowmaker.org/files/
++
++Modifications of wterm package for Debian GNU/Linux Copyright (C) 2001-02
++Brian Mays and are released under the GPL (on Debian systems see
++"/usr/share/common-licenses/GPL").
++
++Changes:
++ * added Debian GNU/Linux package maintenance system files
++ * fixed include directories
++ * added hack to change the cursor color whenever foreground color is
++   changed
++ * added patch from Geoff Wing <gcw@rxvt.org> to bind specific X
++   resources before global resources
++ * fixed bug causing wterm to ignore the numlock
++
++wterm is 
++ * Copyright (C) 1992      John Bovey, University of Canterbury
++ *				- original version
++ * Copyright (C) 1994      Robert Nation <nation@rocket.sanders.lockheed.com>
++ *				- extensive modifications
++ * Copyright (C) 1995      Garrett D'Amore <garrett@netcom.com>
++ * Copyright (C) 1997      mj olesen <olesen@me.QueensU.CA>
++ *				- extensive modifications
++ * Copyright (C) 1997,1998 Oezguer Kesim <kesim@math.fu-berlin.de>
++ * Copyright (C) 1998      Geoff Wing <gcw@pobox.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
+--- wterm-6.2.9.orig/debian/rules
++++ wterm-6.2.9/debian/rules
+@@ -0,0 +1,109 @@
++#!/usr/bin/make -f
++# -*- makefile -*-
++#
++# debian/rules - Makefile for Debian wterm and wterm-ml packages 
++# 
++# Copyright 1996-2004 Brian Mays <brian@debian.org>
++#   Initial version.  Patterned after hello package by Ian Jackson. 
++# Copyright 2005 Jeff Stevens <jeff@mossycup.com>
++#   Substantial rewrite and simplification.  Implemented debhelper and dpatch.
++#
++# This program is licensed under the terms of the GNU General Public License
++# version 2 or later.
++#
++# On Debian GNU/Linux systems the complete text of the GNU General Public
++# License can be found in `/usr/share/common-licenses/GPL-2`.
++#
++#
++# Buildtime Options
++#
++# The following flags may be added to the environment variable
++# DEB_BUILD_OPTIONS to affect package build:
++#
++#   noopt   - Disable compile time optimization.
++#   nostrip - Disable stripping of symbols from binaries.
++
++include /usr/share/dpatch/dpatch.make
++
++BASEDIR		:= /usr
++MANDIR		:= $(BASEDIR)/man
++CFLAGS		:= -Wall -g
++
++COMMON_OPTIONS	:= --prefix=$(BASEDIR)             \
++                   --mandir=$(MANDIR)              \
++		   --enable-utmp                   \
++		   --enable-ttygid                 \
++		   --x-includes=/usr/X11R6/include \
++                   --enable-xgetdefault            \
++		   --with-term=rxvt
++
++ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
++  CFLAGS += -O0
++else
++  CFLAGS += -O2
++endif
++
++clean: unpatch
++	dh_testdir
++	dh_testroot
++	test ! -e build-stamp || rm build-stamp
++	test ! -e builds || rm -r builds
++	test ! -e Makefile || $(MAKE) distclean
++	dh_clean
++
++build: patch-stamp build-stamp
++
++build-stamp:
++	dh_testdir
++	mkdir builds
++	./configure $(COMMON_OPTIONS) &&                \
++	  $(MAKE) CFLAGS="$(CFLAGS)" all &&             \
++	  mv src/wterm builds/wterm
++	$(MAKE) distclean
++	./configure $(COMMON_OPTIONS) --enable-kanji && \
++	  $(MAKE) CFLAGS="$(CFLAGS)" all &&             \
++	  mv src/wterm builds/kwterm
++	$(MAKE) distclean
++	./configure $(COMMON_OPTIONS) --enable-big5 &&  \
++	  $(MAKE) CFLAGS="$(CFLAGS)" all &&             \
++	  mv src/wterm builds/cwterm
++	$(MAKE) distclean
++	./configure $(COMMON_IPTIONS) --enable-greek && \
++	  $(MAKE) CFLAGS="$(CFLAGS)" all &&             \
++	  mv src/wterm builds/gwterm
++	touch build-stamp 
++
++binary: binary-indep binary-arch
++
++binary-indep: build
++
++binary-arch: build
++	dh_testdir
++	dh_testroot
++	dh_install
++	dh_installmenu
++	dh_installman
++	dh_installdocs
++	dh_installexamples
++	dh_installchangelogs doc/changes.txt
++	dh_installdeb
++	dh_link
++	dh_strip
++	dh_compress
++	dh_fixperms
++	chown root:utmp                  \
++	  debian/wterm/usr/bin/wterm     \
++	  debian/wterm-ml/usr/bin/kwterm \
++	  debian/wterm-ml/usr/bin/cwterm \
++	  debian/wterm-ml/usr/bin/gwterm
++	chmod 2755                       \
++	  debian/wterm/usr/bin/wterm     \
++	  debian/wterm-ml/usr/bin/kwterm \
++	  debian/wterm-ml/usr/bin/cwterm \
++	  debian/wterm-ml/usr/bin/gwterm
++	dh_shlibdeps
++	dh_gencontrol
++	dh_md5sums
++	dh_builddeb
++
++.PHONY: clean build binary binary-indep binary-arch
+--- wterm-6.2.9.orig/debian/wterm-ml.1
++++ wterm-6.2.9/debian/wterm-ml.1
+@@ -0,0 +1,49 @@
++.\"" @(#)wterm-ml.1		-*- nroff -*-
++.TH WTERM-ML 1 "27 January 2002" "X Version 11" "X Tools"
++.SH NAME
++cwterm \- lightweight terminal emulator with Chinese character support
++.br
++gwterm \- lightweight terminal emulator with Greek character support
++.br
++kwterm \- lightweight terminal emulator with Japanese character support
++.SH SYNOPSIS
++.B cwterm 
++.RI [ options ]
++.RB [ \-e
++.I command
++.RI [ args ]]
++.br
++.B gwterm
++.RI [ options ]
++.RB [ \-e
++.I command
++.RI [ args ]]
++.br
++.B kwterm
++.RI [ options ]
++.RB [ \-e
++.I command
++.RI [ args ]]
++.br
++.SH DESCRIPTION
++the
++.BR wterm-ml
++package contains versions of
++.B wterm
++that have been compiled with support for non-latin character
++sets: Japanese (kanji) characters, Chinese (big5) characters, and greek
++keyboards. Wterm is a terminal emulator for use with the X Window System.
++.LP
++A more complete description of
++.B wterm
++can be found in the
++.IR wterm (1)
++manual page (which is in the
++.B wterm
++package in the Debian distribution).
++.SH SEE ALSO
++.IR wterm (1), rxvt (1)
++.SH AUTHOR
++This manual page was written by Brian Mays <brian@debian.org> for
++.BR "Debian" .
++It has been updated by Jeff Stevens <jeff@mossycup.com>.
+--- wterm-6.2.9.orig/debian/wterm-ml.docs
++++ wterm-6.2.9/debian/wterm-ml.docs
+@@ -0,0 +1,8 @@
++debian/README.Debian
++debian/TODO.Debian
++doc/FAQ
++doc/README.greek
++doc/README.menu
++doc/README.xvt
++doc/wtermRef.html
++doc/wtermRef.txt
+--- wterm-6.2.9.orig/debian/wterm-ml.manpages
++++ wterm-6.2.9/debian/wterm-ml.manpages
+@@ -0,0 +1 @@
++debian/wterm-ml.1
+--- wterm-6.2.9.orig/debian/wterm-ml.install
++++ wterm-6.2.9/debian/wterm-ml.install
+@@ -0,0 +1,5 @@
++builds/kwterm usr/bin
++builds/cwterm usr/bin
++builds/gwterm usr/bin
++debian/wterm-ml.lintian/wterm-ml usr/share/lintian/overrides
++debian/wterm-ml.linda/wterm-ml usr/share/linda/overrides
+--- wterm-6.2.9.orig/debian/wterm-ml.links
++++ wterm-6.2.9/debian/wterm-ml.links
+@@ -0,0 +1,3 @@
++usr/share/man/man1/wterm-ml.1.gz usr/share/man/man1/kwterm.1.gz
++usr/share/man/man1/wterm-ml.1.gz usr/share/man/man1/cwterm.1.gz
++usr/share/man/man1/wterm-ml.1.gz usr/share/man/man1/gwterm.1.gz
+--- wterm-6.2.9.orig/debian/wterm-ml.postinst
++++ wterm-6.2.9/debian/wterm-ml.postinst
+@@ -0,0 +1,24 @@
++#!/bin/sh -e
++
++# Add cwterm, gwterm and kwterm to the alternatives system.
++if [ "$1" = "configure" ]; then
++  update-alternatives \
++    --install /usr/bin/x-terminal-emulator \
++      x-terminal-emulator /usr/bin/cwterm 20 \
++    --slave /usr/share/man/man1/x-terminal-emulator.1.gz \
++      x-terminal-emulator.1.gz /usr/share/man/man1/cwterm.1.gz
++  update-alternatives \
++    --install /usr/bin/x-terminal-emulator \
++      x-terminal-emulator /usr/bin/gwterm 20 \
++    --slave /usr/share/man/man1/x-terminal-emulator.1.gz \
++      x-terminal-emulator.1.gz /usr/share/man/man1/gwterm.1.gz
++  update-alternatives \
++    --install /usr/bin/x-terminal-emulator \
++      x-terminal-emulator /usr/bin/kwterm 20 \
++    --slave /usr/share/man/man1/x-terminal-emulator.1.gz \
++      x-terminal-emulator.1.gz /usr/share/man/man1/kwterm.1.gz
++fi
++
++# DH will add code to run update-menus
++
++#DEBHELPER#
+--- wterm-6.2.9.orig/debian/wterm-ml.menu
++++ wterm-6.2.9/debian/wterm-ml.menu
+@@ -0,0 +1,9 @@
++?package(wterm-ml): needs="X11" section="XShells" title="CWterm" \
++  longtitle="CWterm: terminal emulator for X with Chinese (Big5) support" \
++  command="/usr/bin/cwterm"
++?package(wterm-ml): needs="X11" section="XShells" title="GWterm" \
++  longtitle="GWterm: terminal emulator for X with Greek support" \
++  command="/usr/bin/gwterm"
++?package(wterm-ml): needs="X11" section="XShells" title="KWterm" \
++  longtitle="KWterm: terminal emulator for X with Japanese (Kanji) support" \
++  command="/usr/bin/kwterm" 
+--- wterm-6.2.9.orig/debian/wterm-ml.postrm
++++ wterm-6.2.9/debian/wterm-ml.postrm
+@@ -0,0 +1,5 @@
++#!/bin/sh -e
++
++# DH will add code to run update-menus
++
++#DEBHELPER#
+--- wterm-6.2.9.orig/debian/wterm-ml.preinst
++++ wterm-6.2.9/debian/wterm-ml.preinst
+@@ -0,0 +1,12 @@
++#!/bin/sh -e
++
++# The previous stable version of this package was wterm-ml_6.2.9-6.2 and shipped
++# with Sarge.  This script contained code to remove, for versions less than
++# 6.2.6-17, the depreciated /usr/X11R6/bin/wterm-ml from the alternatives
++# system.  This script also contained code to remove, for versions less than
++# 6.2.9-6, the depreciated wterm docs directory from /usr/doc.  Upgrades
++# skipping one or more stable releases are not supported per policy.  As such,
++# this code has been removed as it has been executed during the Sarge upgrade
++# or this is a fresh wterm install.
++
++#DEBHELPER#
+--- wterm-6.2.9.orig/debian/wterm-ml.prerm
++++ wterm-6.2.9/debian/wterm-ml.prerm
+@@ -0,0 +1,10 @@
++#! /bin/sh -e
++set -e
++
++if [ "$1" = remove ]; then
++    update-alternatives --remove x-terminal-emulator /usr/bin/cwterm
++    update-alternatives --remove x-terminal-emulator /usr/bin/gwterm
++    update-alternatives --remove x-terminal-emulator /usr/bin/kwterm
++fi
++
++#DEBHELPER#
+--- wterm-6.2.9.orig/debian/wterm.1
++++ wterm-6.2.9/debian/wterm.1
+@@ -0,0 +1,220 @@
++.TH WTERM 1 "September 1999" "Debian Project"
++.SH NAME
++wterm \- lightweight terminal emulator for X
++.SH SYNOPSIS
++.B wterm 
++[
++.I options
++]
++.br
++.SH "DESCRIPTION"
++This manual page documents briefly the
++.BR wterm
++application.
++Wterm is an X console based on RXVT, it has many features including
++fast transparency, nice scrollbars and image backgrounds.
++..
++.SH OPTIONS
++..
++.B -Note-
++.br
++In most cases, \fI-option\fP turns the option on, \fI+option\fP will turn
++it off. This may seem a little illogical, but such is life.
++..
++.TP
++.B -C
++Intercept console messages.
++..
++.TP
++.B -bd \fIcolour\fP
++Border colour.
++..
++.TP
++.B -bg \fIcolour\fP
++Set background colour.
++..
++.TP
++.B -cr \fIcolour\fP
++Cursor colour.
++..
++.TP
++.B -display \fIstring\fP
++X server to connect to.
++..
++.TP
++.B -e \fIcommand\fP [arguments]
++Open wterm and execute command.
++..
++.TP
++.B -fb \fIfontname\fP
++Use specified font for bold.
++..
++.TP
++.B -fg \fIcolour\fP
++Set foreground colour.
++..
++.TP
++.B -fn \fIfontname\fP
++Use specified font for normal text.
++..
++.TP
++.B -gc \fIGC\fP
++GC function types - The type of context use when creating the pixmap window.
++..
++.TP
++.B \-geometry \fIgeometry\fP
++Size (in characters) and position of window.
++..
++.TP
++.B -/+hi
++Turn on/off highlight.
++..
++.TP
++.B -iconic
++Start wterm as an icon.
++..
++.TP
++.B -/+ls
++Turn on/off login shell.
++..
++.TP
++.B -n \fIstring\fP
++Icon name for window.
++..
++.TP
++.B -name \fIstring\fP
++Client instance, icon and title strings.
++..
++.TP
++.B -pixmap \fIfile\fP
++Background pixmap
++..
++.TP
++.B -pr \fIcolour\fP
++Pointer colour.
++..
++.TP
++.B -/+rv
++Turn on/off reverse video.
++..
++.TP
++.B -/+sb
++Turn on/off scrollbar.
++..
++.TP
++.B -/+sh
++Turn on/off shaded transparency.
++..
++.TP
++.B -/+si
++Turn on/off scroll-on-tty-output.
++..
++.TP
++.B -/+sk
++Turn on/off scroll-on-keypress.
++..
++.TP
++.B -sl \fInumber\fP
++Number of scrolled lines to save.
++..
++.TP
++.B -/+sr
++Turn on/off scrollbar right.
++..
++.TP
++.B -/+st
++Turn on/off scrollbar without a trough.
++..
++.TP
++.B -title \fIstring\fP
++Title name for window.
++..
++.TP
++.B \-tn \fIstring\fP
++Value of the TERM environment variable
++..
++.TP
++.B -/+tr
++Turn on/off transparency.
++..
++.TP
++.B -/+ut
++Turn on/off utmp inhibit.
++..
++.TP
++.B -/+vb
++Turn on/off visual bell.
++..
++.TP
++.B -/+wm
++Turn on/off window maker menu.
++..
++.SH "SEE ALSO"
++Docs can be found in \fI/usr/share/doc/wterm/\fP.
++Also, take a look at
++.I http://www.wterm.org/
++for more information on wterm.
++..
++.sp
++GC function types, the type of context use when creating the pixmap window
++is a complex feature, and cannot be explained here in any depth which would
++be useful. I suggest the manpage
++.BR XCreateGC (3x),
++which is a part of the
++.I xmanpages
++package.
++.sp
++The following manpages may also be of use:
++.sp
++.BR xvt (1),
++.BR rxvt (1).
++..
++.SH "UTMP SUPPORT"
++.Pp
++Wterm has support for UTMP. This means that a user who using a wterm, is
++visible in the "who" command. In order for this to work, the wterm binary
++(located in \fB/usr/bin/\fP) is set with a group "utmp" and is set gid
++utmp.
++.Pp
++.sp
++.Pp
++If you find that UTMP support isn't working (your wterm's don't show up in a
++who), check the permissions of \fB/var/run/utmp\fP. They should look something
++like:
++.sp
++-rw-rw-r--    1 root     utmp         8448 May  6 21:47 /var/run/utmp
++.sp
++This can be set with the following commands (as the \fBroot\fP user):
++.br
++	\fBchown root.utmp /var/run/utmp
++.br
++	chmod 664 /var/run/utmp\fP
++.Pp
++.sp
++.Pp
++..
++.SH "OTHER NOTES"
++.Pp
++You can change your font size on the fly in wterm with the following keyboard
++combinations:
++.sp
++\fB	Key Combination			Function\fP
++.sp
++	shift & keypad "+"		\fIMake font larger\fP 
++.br
++	shift & keypad "-" 		\fIMake font smaller\fP
++.sp
++.Pp
++It's also worth noting that the keyboard combination \fBshift & insert\fP
++causes the current text selection to be inserted. Select a portion of text
++using your mouse cursor, and press the combination in wterm.
++.Pp
++.sp
++.SH "CREDITS"
++.Pp
++Author of xvt is John Bovey, authors of rxvt are Rob Nation, Mark Olesen,
++Oezguer Kesim and Geoff Wing, and author of wterm is an anonymous coder.
++.SH AUTHOR
++This manual page was written for Debian GNU/Linux (but may be used by
++others) The original author was Mark Triggs <mrbump@debian.org>. Updates
++have been made by Jeff Stevens <jeff@mossycup.com>.
+--- wterm-6.2.9.orig/debian/wterm.docs
++++ wterm-6.2.9/debian/wterm.docs
+@@ -0,0 +1,7 @@
++debian/README.Debian
++debian/TODO.Debian
++doc/FAQ
++doc/README.menu
++doc/README.xvt
++doc/wtermRef.html
++doc/wtermRef.txt
+--- wterm-6.2.9.orig/debian/wterm.examples
++++ wterm-6.2.9/debian/wterm.examples
+@@ -0,0 +1 @@
++examples/menu
+--- wterm-6.2.9.orig/debian/wterm.install
++++ wterm-6.2.9/debian/wterm.install
+@@ -0,0 +1,3 @@
++builds/wterm usr/bin
++debian/wterm.lintian/wterm usr/share/lintian/overrides
++debian/wterm.linda/wterm usr/share/linda/overrides
+--- wterm-6.2.9.orig/debian/wterm.manpages
++++ wterm-6.2.9/debian/wterm.manpages
+@@ -0,0 +1 @@
++debian/wterm.1
+--- wterm-6.2.9.orig/debian/wterm.menu
++++ wterm-6.2.9/debian/wterm.menu
+@@ -0,0 +1,2 @@
++?package(wterm): needs="X11" section="XShells" title="Wterm" \
++ longtitle="Wterm: RXVT based terminal emulator for X" command="/usr/bin/wterm"
+--- wterm-6.2.9.orig/debian/wterm.postinst
++++ wterm-6.2.9/debian/wterm.postinst
+@@ -0,0 +1,14 @@
++#!/bin/sh -e
++
++# Add wterm to the alternatives system. 
++if [ "$1" = "configure" ]; then
++  update-alternatives \
++    --install /usr/bin/x-terminal-emulator \
++      x-terminal-emulator /usr/bin/wterm 20 \
++    --slave /usr/share/man/man1/x-terminal-emulator.1.gz \
++      x-terminal-emulator.1.gz /usr/share/man/man1/wterm.1.gz
++fi
++
++# DH will add code to run update-menus
++
++#DEBHELPER#
+--- wterm-6.2.9.orig/debian/wterm.postrm
++++ wterm-6.2.9/debian/wterm.postrm
+@@ -0,0 +1,5 @@
++#!/bin/sh -e
++
++# DH will add code to run update-menus
++
++#DEBHELPER#
+--- wterm-6.2.9.orig/debian/wterm.preinst
++++ wterm-6.2.9/debian/wterm.preinst
+@@ -0,0 +1,12 @@
++#!/bin/sh -e
++
++# The previous stable version of this package was wterm-6.2.9-6.2 and shipped
++# with Sarge.  This script contained code to remove, for versions less than
++# 6.2.6-17, the depreciated /usr/X11R6/bin/wterm from the alternatives
++# system.  This script also contained code to remove, for versions less than
++# 6.2.9-6, the depreciated wterm docs directory from /usr/doc.  Upgrades
++# skipping one or more stable releases are not supported per policy.  As such,
++# this code has been removed as it has been executed during the Sarge upgrade
++# or this is a fresh wterm install.
++
++#DEBHELPER#
+--- wterm-6.2.9.orig/debian/wterm.prerm
++++ wterm-6.2.9/debian/wterm.prerm
+@@ -0,0 +1,9 @@
++#!/bin/sh
++set -e 
++
++# Upon package removal, remove wterm from the alternatives system.
++if [ "$1" = remove ]; then
++  update-alternatives --remove x-terminal-emulator /usr/bin/wterm
++fi
++
++#DEBHELPER#
+--- wterm-6.2.9.orig/examples/menu/terminal.menu
++++ wterm-6.2.9/examples/menu/terminal.menu
+@@ -0,0 +1,59 @@
++# standard settings for a `terminal' control menu
++# only attach to an existing menubar
++[menu]
++
++/Terminal/*
++./Font/*
++{Normal}	^@\E]50;#
++{Larger}	^@\E]50;#+
++{Smaller}	^@\E]50;#-
++{-}
++{Font 1}	^@\E]50;#1
++{Font 2}	^@\E]50;#2
++{Font 3}	^@\E]50;#3
++{Font 4}	^@\E]50;#4
++../Screen/*
++{ReverseVideo}	^@\E[?5t
++{Toggle Width}	^@\E[?3t
++{Cursor}	^@\E[?25t
++{Switch}	^@\E[?47t
++{-}
++{menuBar}	^@\E[?10t
++{refresh menu}	^@\E[?10h
++{scrollBar}	^@\E[?30t
++{-}
++{Toggle scroll-on-TTY}	^@\E[?1010t
++{Toggle scroll-on-Key}	^@\E[?1011t
++../Keys/*
++{XTerm}	^@\E[?35t
++{Backspace}	^@\E[?67t
++{Cursor}	^@\E[?1t
++{KeyPad}	^@\E[?66t
++../
++{-}
++./Pixmap/*
++{None}		^@\E[m\E]20;\a
++{-}
++# load .xpm files (assuming Rxvt*path: has been properly set)
++# notice there are 2 ways to do this task
++{background5}	^@\E]20;background5
++{Mona}		^@\E]10;[pixmap:monalisa;100]
++{-}
++./Attrib/*
++{Full}		^@\E]20;;100x100+50+50;?
++{Tiled}		^@\E]20;;0
++{Centre}	^@\E]20;;=+50+50;?
++{-}
++# set `quick arrow' keys
++{Zoom}{200/50%}	^@\E]10;[:<b>\^@\\E]20;;<r>200x0<l>50x0<u>0x200<d>0x50<e>;?:]
++{Pos}{5%}	^@\E]10;[:<b>\^@\\E]20;;<r>+5+0<l>-5+0<u>+0-5<d>+0+5<e>;?:]
++../
++../
++{-}
++{Version}	^@\E[8n
++/
++
++# make sure the change gets updated
++[show]
++[done]
++#--------------------------------------------------------------------- eof
+--- wterm-6.2.9.orig/examples/menu/example.menu
++++ wterm-6.2.9/examples/menu/example.menu
+@@ -0,0 +1,95 @@
++This example illustrates how several menus could be combined together
++
++command = "[read:example]"
++
++	read the file starting at "[menu]" or "[menu:???]"
++	and continue until it "[done]"
++
++command = "[read:example;pico]" or "[read:example;shell]"
++
++	read the file starting at "[menu:pico]" or "[menu:shell]",
++	respectively and continue until "[done:pico]" or [done:shell]",
++	respectively.
++
++#-------------------------------------------------------------------------
++
++[menu:pico]
++[clear]
++[title:Pico (%n-%v)]
++
++# a menu for the pico editor
++# mostly a demonstration, I don't know why anyone would need it
++
++# Prior/Next & Home/End are messed up
++<l>^A<r>^E<u>^Y<d>^V
++
++/File/*
++{Insert File}{^R}
++{Save As}{^O}
++{-}
++{Suspend}{^Z}
++{Exit}{^X}
++
++/Edit/*
++{Find}{^W}
++{-}
++{Del Char}{^D}
++{Mark}{^^}
++{Kill Line}{^K}
++{Paste}{^U}
++
++/Basics/*
++{Forward}{^F}
++{Backward}{^B}
++{-}
++{Prev}{^P}
++{Next}{^N}
++{-}
++{Beg-of-Line}{^A}
++{End-of-Line}{^E}
++{-}
++{Prev Page}{^Y}
++{Next Page}{^V}
++
++/Buffer/*
++{Reformat}{^J}
++{Position}{^C}
++{Refresh}{^L}
++{Spell}{^T}
++
++[read:terminal]
++
++/?/*
++{Help}{^G}
++
++[show]
++[done:pico]
++
++#-------------------------------------------------------------------------
++
++[menu:shell]
++[clear]
++[title:shell]
++# [pixmap:name]
++
++# not necessarily useful, but an example of using the rxvt menuBar
++
++# assuming we have ksh with Emacs bindings
++<u>^P<d>^N<r>^F<l>^B
++
++/Programs/*
++{Edit}		${EDITOR:-vi}\r
++{Mail}		Mail\r
++{News}		slrn\r
++{Rxvt-News}	rxvt -e slrn&
++{Commander}	mc\r
++
++/Shell/{finger} finger\r
++{.name}	invisible label!
++/
++
++[read:terminal]
++[show]
++[done:shell]
++
++#--------------------------------------------------------------------- eof
+--- wterm-6.2.9.orig/examples/menu/jedmenu.sl
++++ wterm-6.2.9/examples/menu/jedmenu.sl
+@@ -0,0 +1,136 @@
++%--------------------------------*-SLang-*--------------------------------
++% An example of using the rxvt menuBar for the JED editor
++#if$TERM xterm*
++%!% provide a hook to imitated the S-Lang> prompt
++%!% use ESC[m to shadow the ESC[M used by mouse reporting
++define menuFn ()
++{
++   variable ch, cmd;
++
++   cmd = Null_String;
++   forever
++     {
++	ch = getkey ();
++	if (ch == '\r') break;
++	cmd = strcat (cmd, char (ch));
++     }
++   eval (cmd);
++}
++local_setkey ("menuFn", "\e[m");	% menu
++
++%!% allow the user to bind their owm commands
++define menucmd (str) { tt_send (Sprintf ("\e]10;%s\a", str, 1)); }
++%-------------------------------------------------------------------------
++% integrate these with any existing suspend/resume/exit hooks
++% the suspend hook works best if there was already a menu defined
++% before invoking JED
++
++define suspend_hook () { menucmd ("[prev]"); }
++define resume_hook () { menucmd ("[next]"); }
++define exit_hook () { menucmd ("[rm]"); exit_jed (); }
++
++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
++menucmd ("[read:jedmenu.sl]");		% read this file
++
++% format _jed_version xyyzz into x.yy-zz
++menucmd (Sprintf ("[:[title:Jed%d.%d-%d (%%n-%%v)]:]",
++		  (_jed_version/10000),
++		  ((_jed_version mod 10000)/100),
++		  (_jed_version mod 100),
++		  3));
++
++% get rid off pixmap stuff
++if (strcmp (getenv ("COLORTERM"), "rxvt-xpm"))
++{
++   menucmd ("[menu][:-/Terminal/Pixmap:][show]");
++}
++#endif	% xterm*
++%%%%%%%%%%%%%%%%%%%%%%%%%%% end-of-file (SLang) %%%%%%%%%%%%%%%%%%%%%%%%%%
++% rxvt menu database
++#iffalse
++% An example of using the rxvt menuBar for the JED editor
++% possibly useful things for the JED editor -- assuming Emacs bindings
++
++[menu:jed]
++
++[title:Jed menu (%n-%v)]
++% some convenient arrows
++<b>\E[m<l>bskip_word<u>backward_paragraph<d>forward_paragraph<r>skip_word<e>\r
++
++/File/*
++{Open}{^X^F}
++{Save}{^X^W}
++{Save Buffers}{^Xs}
++{Insert File}{^Xi}
++{-}
++{Shell Cmd}{M-!}
++{-}
++{Exit}{^X^C}
++
++/Edit/*
++{Undo}{^_}
++{-}
++{Cut}{^W}
++{Copy}{M-W}
++{Paste}{^Y}
++
++/Search/*
++{Forward}{^S}
++{Backward}{^R}
++{Replace}{M-%}
++{-}
++./Regexp/*
++{Forward}{M-^S}
++{Backward}{M-^R}
++{Replace}	\E[mquery_replace_match\r
++
++/Buffers/*
++{Kill}{^Xk}
++{List}{^X^B}
++{Switch}{^Xb}
++{-}
++./Modes/*
++{C}		\E[mc_mode\r
++{SLang}	\E[mslang_mode\r
++{None}		\E[mno_mode\r
++{LaTeX}	\E[mlatex_mode\r
++{Text}		\E[mtext_mode\r
++{Fortran}	\E[mfortran_mode\r
++
++/Window/*
++{Delete}{^X0}
++{One}{^X1}
++{Split}{^X2}
++{Other}{^Xo}
++{-}
++{Recenter}{^L}
++{-}
++./Color Schemes/*
++{White-on-Black}	\E[mset_color_scheme("15;0")\r
++{Black-on-White}	\E[mset_color_scheme("0;15")\r
++{White-on-default-Black}\E[mset_color_scheme("15;default;0")\r
++{Black-on-default-White}\E[mset_color_scheme("0;default;15")\r
++
++/Utils/*
++{Bufed}	\E[mbufed\r
++{Dired}	\E[mdired\r
++{Mail}	\E[mmail\r
++{Rmail}	\E[mrmail\r
++{-}
++{EvalBuffer}	\E[mevalbuffer\r
++{Trim-Buffer}	\E[mtrim_buffer\r
++
++[read:terminal]
++
++/?/*
++{Info}{^X?i}
++{Man}{^X?m}
++{-}
++{Apropos}{^X?a}
++{Show Key}{^X?k}
++{Where Is}{^X?w}
++
++[show]
++[done]
++#endif
++%%%%%%%%%%%%%%%%%%%%%%%%%%% end-of-file (SLang) %%%%%%%%%%%%%%%%%%%%%%%%%%
+--- wterm-6.2.9.orig/examples/menu/menu
++++ wterm-6.2.9/examples/menu/menu
+@@ -0,0 +1,83 @@
++#!/bin/sh --
++# shell wrapper to avoid typing Menu escape sequences
++if test $# -eq 0; then
++echo "\
++usage: `basename $0` cmd
++where the most common commands are
++	[menu] [menu:name]
++	[read:file] [read:file;name]
++	[title:string]
++	+/path/menu
++	+/path/menu/*
++	+/menu/path/{-}
++	+/menu/path/{item}{rtext} action
++
++	-/*
++	-/path/menu
++	-/path/menu/*
++	-/path/{-}
++	-/path/{item}
++
++	<b>Begin<r>Right<l>Left<u>Up<d>Down<e>End
++	[done]
++
++	[rm] [rm:] [rm*] [rm:*] [rm:name]
++	[swap] [prev] [next]
++	[clear] [show] [hide]
++	[pixmap:file]
++	[dump]
++NB: commands may need to be quoted to avoid shell expansion
++"
++exit
++fi
++Echo="echo -n"
++# some systems/shells don't like `echo -n'
++case `/bin/uname` in
++    SunOS) Echo="echo";;
++esac
++while [ $# -gt 0 ]
++do
++    case $1 in
++	+* | -* | '<'* | '['*)		# send raw commands
++	$Echo "]10;$1"
++	;;
++
++	*)					# read in menu files
++	if test $1 = "default";
++	then
++	    $Echo "]10;[read:$0]"
++	else
++	    $Echo "]10;[read:$1]"
++	fi
++	if test "$COLORTERM" != "rxvt-xpm";	# remove pixmap stuff
++	then
++	    $Echo "]10;[menu][:-/Terminal/Pixmap:][show]"
++	fi
++	;;
++    esac
++    shift
++done
++exit	# stop shell here!
++#-------------------------------------------------------------------------
++# since everything before a [menu] tag is ignored, we can put a default
++# menu here
++#-------------------------------------------------------------------------
++[menu:default]
++
++/Programs/*
++{Edit}		${EDITOR:-vi}\r
++{Top}		top\r
++{Dir}		ls -la|${PAGER:-more}\r
++{Dir-Time}	ls -lat|${PAGER:-more}\r
++{Space Left}	df\r
++{-}
++{Exit}		exit\r
++
++/Shell/*
++{check mail}	checkmail\r
++{Background}	^Z bg\r
++{Kill}		^C\r
++
++[show]
++[done]
++#--------------------------------------------------------------------- eof
+--- wterm-6.2.9.orig/examples/menu/rxvt.menu
++++ wterm-6.2.9/examples/menu/rxvt.menu
+@@ -0,0 +1,119 @@
++#!/bin/sh --
++# an example of having different menus (even different pixmaps)
++# show up depending on the machine you are rlogin/telnet connecting to
++
++menu="$0"	# or any convenient database
++exe="../../src/rxvt"	# default program to execute
++# exe="/usr/local/bin/rxvt-2.21"	# default program to execute
++
++if test $# -gt 0; then
++    # if first argument contains "rxvt" use that instead
++    case $1 in *rxvt*) exe="$1" shift;; esac
++fi
++
++while [ $# -gt 0 ]
++do
++    case $1 in
++	-h)		# give usage
++	echo "
++Usage:	`basename $0` [rxvt-prgm] [options]
++
++	start rxvt
++	and load a menu corresponding to \"machine\" if the option
++	    -e {rlogin|telnet|tn3270} Machine.Domain ...
++	was used"
++	exit
++	;;	# don't bother if we've already set it
++
++	-menu) break;;	# don't bother if we've already set it
++
++	-e)
++	if test $# -ge 3;
++	then
++	    case $2 in
++		# try to find menu for these cases
++		*rlogin | *telnet | *tn3270)
++		# strip domain & convert case
++		mach=`echo $3 | sed -e 's/\..*$//' | tr [A-Z] [a-z]`
++		if test ! -z "$mach";
++		then
++		    found=`egrep "^\[menu:$mach\]" $menu`
++		    if test ! -z "$found";
++		    then
++			mach="$menu;$mach"
++			exe="$exe -menu $mach"
++		    fi
++ 		fi
++		;;
++	    esac
++	fi
++	break
++	;;
++
++	*)
++	exe="$exe $1"
++	;;
++    esac
++    shift
++done
++
++# echo "$exe $@"
++$exe $@ &
++exit	# stop shell here!
++#-------------------------------------------------------------------------
++[menu:weber]
++#[menu:machine1]
++[clear]
++# [pixmap:machine1.xpm]
++
++/Programs/*
++{Edit}		${EDITOR:-vi}\r
++{Mail}		Mail\r
++{News}		News\r
++{-}
++{Exit}		exit\r
++
++/Jobs/*
++{Top}		top\r
++{Ps u}		ps aux|egrep ^$USER
++{Ps aux}	ps aux|egrep -v "(root|ps)"
++# who's REALLY logged on (even with utmp logging turned off)
++{Who}		ps aux|egrep "\-bash"|egrep -v "grep"
++{-}
++{Background}	^Z bg\r
++{Kill}		^C\r
++
++/Misc/*
++{Dir}		ls -la|${PAGER:-more}\r
++{Dir-Time}	ls -lat|${PAGER:-more}\r
++{Space Left}	df\r
++
++[read:terminal]
++[show]
++#[done:machine1]
++[done:weber]
++
++#-------------------------------------------------------------------------
++[menu:conn]
++#[menu:machine2]
++[clear]
++# [pixmap:machine2.xpm]
++
++/Programs/*
++{Edit}		${EDITOR:-vi}\r
++{Checkmail}	checkmail\r
++{Dir}		ls -la|${PAGER:-more}\r
++{Dir-Time}	ls -lat|${PAGER:-more}\r
++{Space Left}	df\r
++{-}
++{Exit}		exit\r
++
++/Jobs/*
++{Background}	^Z bg\r
++{Kill}		^C\r
++
++[read:terminal]
++[show]
++#[done:machine2]
++[done:conn]
++#--------------------------------------------------------------------- eof
